@@ -28,6 +28,93 @@ Mapper_DataManager.prototype.loadMaps = function () {
     this.waitForMaps();
 };
 
+Mapper_DataManager.prototype.loadDataFile = function (name, src, id) {
+    const xhr = new XMLHttpRequest();
+    const url = "data/" + src;
+    xhr.open("GET", url);
+    xhr.overrideMimeType("application/json");
+    xhr.onload = () => this.onXhrLoad(xhr, name, src, url, id);
+    xhr.onerror = () => this.onXhrError(name, src, url);
+    xhr.send();
+};
+
+Mapper_DataManager.prototype.onXhrLoad = function (xhr, name, src, url, id) {
+    if (xhr.status < 400) {
+        this.onLoad(JSON.parse(xhr.responseText), id);
+    } else {
+        this.onXhrError(name, src, url);
+    }
+};
+
+Mapper_DataManager.prototype.onXhrError = function (name, src, url) {
+    const error = { name: name, src: src, url: url };
+    this._loaded++; //go ahead and add 1 even if an error occurred.
+    this._errors.push(error);
+};
+
+Mapper_DataManager.prototype.onLoad = function (object, id) {
+    this._loaded++;
+    object.id = id;
+    this.createWorldSets(object);
+};
+
+Mapper_DataManager.prototype.createWorldSets = function (object) {
+    //split note by line
+    const result = object.note.split(/\r?\n/);
+    //if note line is for world position information then 
+    //create a world entry and store world specific maps 
+    //in the world object
+    result.forEach(str => {
+        if (str.substring(0, 8) == 'worldpos') {
+            let arr = str.substring(9).split(" ");
+
+            /**Set the world attribute in each map**/
+            object._world = arr[0];
+            object._worldX = arr[1];
+            object._worldY = arr[2];
+
+            let world = this.getWorld(object._world);
+
+            //get world boundaries.
+            if (world.xMin > object._worldX || world.xMin == null) {
+                world.xMin = object._worldX
+            }
+            if (world.yMin > object._worldY || world.yMin == null) {
+                world.yMin = object._worldY;
+            }
+            if (world.xMax < object._worldX || world.xMax == null) {
+                world.xMax = object._worldX;
+            }
+            if (world.yMax < object._worldY || world.yMax == null) {
+                world.yMax = object._worldY;
+            }
+
+            if (!world.mapSets.hasOwnProperty(object._worldX)) {
+                world.mapSets[object._worldX] = new Array();
+            }
+
+            world.mapSets[object._worldX][object._worldY] = object;
+            this.worldSets[world.name] = world;
+        }
+    });
+};
+
+Mapper_DataManager.prototype.getWorld = function (name) {
+    if (!this.worldSets.hasOwnProperty(name)) {
+        this.worldSets[name] = { name: name, xMin: null, xMax: null, yMin: null, yMax: null, mapSets: new Array() }
+    }
+    return this.worldSets[name];
+}
+
+Mapper_DataManager.prototype.waitForMaps = function () {
+    if (this._loaded === this._loading) {
+        this.build();
+    }
+    else {
+        setTimeout(function () { this.waitForMaps() }.bind(this), 2500);
+    }
+};
+
 Mapper_DataManager.prototype.build = function () {
     //Loop through all worlds
     Object.values(this.worldSets).forEach(world => {
@@ -79,91 +166,6 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
             console.log("Mapper: Maps have been merged.");
         }
     }
-};
-
-Mapper_DataManager.prototype.loadDataFile = function (name, src, id) {
-    const xhr = new XMLHttpRequest();
-    const url = "data/" + src;
-    xhr.open("GET", url);
-    xhr.overrideMimeType("application/json");
-    xhr.onload = () => this.onXhrLoad(xhr, name, src, url, id);
-    xhr.onerror = () => this.onXhrError(name, src, url);
-    xhr.send();
-};
-
-Mapper_DataManager.prototype.onXhrLoad = function (xhr, name, src, url, id) {
-    if (xhr.status < 400) {
-        this.onLoad(JSON.parse(xhr.responseText), id);
-    } else {
-        this.onXhrError(name, src, url);
-    }
-};
-Mapper_DataManager.prototype.onXhrError = function (name, src, url) {
-    const error = { name: name, src: src, url: url };
-    this._loaded++; //go ahead and add 1 even if an error occurred.
-    this._errors.push(error);
-};
-
-Mapper_DataManager.prototype.onLoad = function (object, id) {
-    this._loaded++;
-    object.id = id;
-    this.createWorldSets(object);
-};
-Mapper_DataManager.prototype.waitForMaps = function () {
-    if (this._loaded === this._loading) {
-        this.build();
-    }
-    else {
-        setTimeout(function () { this.waitForMaps() }.bind(this), 2500);
-    }
-};
-
-Mapper_DataManager.prototype.getWorld = function (name) {
-    if (!this.worldSets.hasOwnProperty(name)) {
-        this.worldSets[name] = { name: name, xMin: null, xMax: null, yMin: null, yMax: null, mapSets: new Array() }
-    }
-    return this.worldSets[name];
-}
-
-Mapper_DataManager.prototype.createWorldSets = function (object) {
-    //split note by line
-    const result = object.note.split(/\r?\n/);
-    //if note line is for world position information then 
-    //create a world entry and store world specific maps 
-    //in the world object
-    result.forEach(str => {
-        if (str.substring(0, 8) == 'worldpos') {
-            let arr = str.substring(9).split(" ");
-
-            /**Set the world attribute in each map**/
-            object._world = arr[0];
-            object._worldX = arr[1];
-            object._worldY = arr[2];
-
-            let world = this.getWorld(object._world);
-
-            //get world boundaries.
-            if (world.xMin > object._worldX || world.xMin == null) {
-                world.xMin = object._worldX
-            }
-            if (world.yMin > object._worldY || world.yMin == null) {
-                world.yMin = object._worldY;
-            }
-            if (world.xMax < object._worldX || world.xMax == null) {
-                world.xMax = object._worldX;
-            }
-            if (world.yMax < object._worldY || world.yMax == null) {
-                world.yMax = object._worldY;
-            }
-
-            if (!world.mapSets.hasOwnProperty(object._worldX)) {
-                world.mapSets[object._worldX] = new Array();
-            }
-
-            world.mapSets[object._worldX][object._worldY] = object;
-            this.worldSets[world.name] = world;
-        }
-    });
 };
 
 waitForMap = function () {
