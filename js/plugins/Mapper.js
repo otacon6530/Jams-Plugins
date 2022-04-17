@@ -1,4 +1,4 @@
-/**Define Objects**/
+  /**Define Objects**/
 function Mapper_DataManager() {
     this.initialize(...arguments);
 }
@@ -16,11 +16,11 @@ Mapper_DataManager.prototype.initialize = function () {
 Mapper_DataManager.prototype.loadMaps = function () {
     this._loading = $dataMapInfos.length;
     $dataMapInfos.forEach(map => {
-        if (map !== null) {
+        if (map !== null && map.id !== 0) {
             const id = parseInt(map.id).toString();
-            const filename = "Map%1.json".format(id.padZero(3));
-            const name = map.name;
-            this.loadDataFile(name, filename, id);
+                const filename = "Map%1.json".format(id.padZero(3));
+                const name = map.name;
+                this.loadDataFile(name, filename, id);
         } else {
             this._loading--;
         }
@@ -145,9 +145,9 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
             let i = 0;
             for (let y = yMax; y >= yMin; y--) {//loop top to bottom sectors
                 for (let x = xMin; x <= xMax; x++) {//loop left to right sectors
-                    for (let k = 0; k <= w * h; k++) {
-                        if (x in world.mapSets) {
-                            if (y in world.mapSets[x]) {
+                    for (let k = 0; k <= w * h; k++) {//loop through the data array.
+                        if (x in world.mapSets) { //verify the map exists on the x axis.
+                            if (y in world.mapSets[x]) { //verify the map exists on the y axis.
                                 round = Math.floor(k / w);
                                 fillPos = k + w * (x + 1) + (round * 2 * (yMax - yMin + 1)) + ((yMax - y) * w * h * (yMax - yMin + 1))
                                 fill[fillPos] = world.mapSets[x][y].data[k];
