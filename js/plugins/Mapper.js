@@ -9,6 +9,7 @@ Mapper_DataManager.prototype.initialize = function () {
     this._loading = 0;
     this._loaded = 0;
     this.worldSets = new Array();
+    this.isMapsReady = false;
     this.loadMaps();
 };
 
@@ -16,7 +17,8 @@ Mapper_DataManager.prototype.initialize = function () {
 Mapper_DataManager.prototype.loadMaps = function () {
     this._loading = $dataMapInfos.length;
     $dataMapInfos.forEach(map => {
-        if (map !== null && map.id !== 0) {
+        if (map !== null && map.id !== "0") {
+
             const id = parseInt(map.id).toString();
                 const filename = "Map%1.json".format(id.padZero(3));
                 const name = map.name;
@@ -129,6 +131,7 @@ Mapper_DataManager.prototype.build = function () {
         }
 
     });
+    this.isMapsReady = true;
 };
 
 Mapper_DataManager.prototype.createSector = function (map, world) {
@@ -169,13 +172,14 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
 };
 
 waitForMap = function () {
-    if (DataManager.isMapLoaded()) {
+    if (!!$dataMapInfos) {
         Mapper.DataManager = new Mapper_DataManager();
     }
     else {
         setTimeout(waitForMap, 2500);
     }
 };
+
 
 //=============================================================================
 // Mapper.js
@@ -206,14 +210,28 @@ PluginManager.registerCommand("MyPlugin", "jms", args => {
     //todo
 });
 
+
+
 /**Override loadMapData, so that the game reads the altered maps instead of the originals**/
 DataManager.loadMapData = function (mapId) {
-    if (mapId > 0) {
-        const filename = "Map%1_combined.json".format(mapId.padZero(3));
-        this.loadDataFile("$dataMap", filename);
-    } else {
-        this.makeEmptyMap();
+    this.waitForComplete(mapId);
+};
+
+//Need to wait for map creation to complete before letting the game engine load the maps.
+DataManager.waitForComplete = function (mapId) {
+    if (Mapper.DataManager.isMapsReady) {
+        if (mapId > 0) {
+            const filename = "Map%1_combined.json".format(mapId.padZero(3));
+            this.loadDataFile("$dataMap", filename);
+        } else {
+            this.makeEmptyMap();
+        }
+    }
+    else {
+        setTimeout(function () {this.waitForComplete(mapId)}.bind(this), 2500);
     }
 };
+
+
 
 
