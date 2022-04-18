@@ -3,7 +3,7 @@
 {"id":1,"expanded":false,"name":"World(-1,0)","order":2,"parentId":0,"scrollX":0,"scrollY":0},
 {"id":2,"expanded":true,"name":"World(-1,1)","order":3,"parentId":0,"scrollX":0,"scrollY":0},
 {"id":3,"expanded":true,"name":"World(0,0)","order":1,"parentId":0,"scrollX":0,"scrollY":0},
-null,
+{"id":4,"expanded":true,"name":"World(0,1)","order":6,"parentId":0,"scrollX":0,"scrollY":0},
 null,
 {"id":6,"expanded":true,"name":"World(1,0)","order":4,"parentId":0,"scrollX":0,"scrollY":0},
 {"id":7,"expanded":true,"name":"World(1,1)","order":5,"parentId":0,"scrollX":0,"scrollY":0}
