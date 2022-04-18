@@ -18,18 +18,10 @@ Mapper_DataManager.prototype.loadMaps = function () {
     this._loading = $dataMapInfos.length;
     $dataMapInfos.forEach(map => {
         if (map !== null && map.id !== "0") {
-<<<<<<< HEAD
             let id = parseInt(map.id).toString();
             let filename = "Map%1.json".format(id.padZero(3));
             let name = map.name;
             this.loadDataFile(name, filename, id);
-=======
-
-            const id = parseInt(map.id).toString();
-                const filename = "Map%1.json".format(id.padZero(3));
-                const name = map.name;
-                this.loadDataFile(name, filename, id);
->>>>>>> d051f99e4f46e30f64764ca947c45c247ea38c3e
         } else {
             this._loading--;
         }
@@ -190,6 +182,7 @@ waitForMap = function () {
     }
 };
 
+
 //=============================================================================
 // Mapper.js
 //=============================================================================
@@ -218,6 +211,8 @@ var Mapper = Mapper || {};
 PluginManager.registerCommand("MyPlugin", "jms", args => {
     //todo
 });
+
+
 
 /**Override loadMapData, so that the game reads the altered maps instead of the originals**/
 DataManager.loadMapData = function (mapId) {
