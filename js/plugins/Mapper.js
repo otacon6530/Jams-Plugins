@@ -1,4 +1,4 @@
-/**Define Objects**/
+  /**Define Objects**/
 function Mapper_DataManager() {
     this.initialize(...arguments);
 }
@@ -18,10 +18,11 @@ Mapper_DataManager.prototype.loadMaps = function () {
     this._loading = $dataMapInfos.length;
     $dataMapInfos.forEach(map => {
         if (map !== null && map.id !== "0") {
+
             const id = parseInt(map.id).toString();
-            const filename = "Map%1.json".format(id.padZero(3));
-            const name = map.name;
-            this.loadDataFile(name, filename, id);
+                const filename = "Map%1.json".format(id.padZero(3));
+                const name = map.name;
+                this.loadDataFile(name, filename, id);
         } else {
             this._loading--;
         }
