@@ -10,6 +10,7 @@ Mapper_DataManager.prototype.initialize = function () {
     this._loaded = 0;
     this.worldSets = new Array();
     this.isMapsReady = false;
+    this.csv = "mapRound,LayerRound,map.id,xMin,xMax,yMin,yMax,k,round,xAxis,yAxis,relYMin,relYMax,fillPos\n";
     this.loadMaps();
 };
 
@@ -120,6 +121,7 @@ Mapper_DataManager.prototype.build = function () {
     //Loop through all worlds
     Object.values(this.worldSets).forEach(world => {
         //Loop through all maps
+        console.log("mapRound,LayerRound,map.id,xMin,xMax,yMin,yMax,k,round,xAxis,yAxis,relYMin,relYMax,fillPos");
         for (let i = world.xMin; i <= world.xMax; i++) {
             for (let j = world.yMin; j <= world.yMax; j++) {
                 map = world.mapSets[i][j];
@@ -148,16 +150,15 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
             for (let k = 0; k < w * h * 6; k++) {//loop through the data array.
                 if (x in world.mapSets) { //verify the map exists on the x axis.
                     if (y in world.mapSets[x]) { //verify the map exists on the y axis.
-                        let round = Math.floor(k / w); //Divide values by the width to know which map to hit.
                         let xAxis = x - xMax + 1;//Get relational distance of x.
                         let yAxis = y - yMax + 1;//Get relational distance of y.
                         let relYMin = yMin - yMax + 1;//Get relational y minimum.
                         let relYMax = yMax - yMin - 1;//Get relational y maximum.
-                        let mapRound = ((k+1) - (k+1) % (w * h))/(w * h); //Divide values by the width to know which map to hit.
-                        let fillPos = k /*- (mapRound * 81)*/ + w * (xAxis + 1) + (round * 2 * (relYMax - relYMin + 1)) + ((relYMax - yAxis) * w * h * (relYMax - relYMin + 1));
-                        let LayerRound =  ((fillPos+1) - (fillPos+1) % 81)/81; //Divide values by the width to know which map to hit.
-                        let f = fillPos;// + (LayerRound*81);
-                        console.log("%s %s id %s xMin %s xMax %s yMin %s yMax %s Position %s Round %s, xAxis %s, yAxis %s, relYMin %s, relYMax %s, fillpos %s",mapRound,LayerRound,map.id, xMin, xMax, yMin, yMax, k, round, xAxis, yAxis, relYMin, relYMax, fillPos);
+                        let mapRound = ((k) - (k) % (w*h))/(w*h) //Divide values by the width to know which map to hit.
+                        let round = Math.floor((k - (mapRound * w * h))/ w); //Divide values by the width to know which map to hit.
+                        let fillPos = k - (mapRound * w * h) + w * (xAxis + 1) + (round * 2 * (relYMax - relYMin + 1)) + ((relYMax - yAxis) * w * h * (relYMax - relYMin + 1));
+                        let f = fillPos + (mapRound* w * h * 3 * 3);
+                        this.csv += mapRound+","+map.id+","+xMin+","+xMax+","+yMin+","+yMax+","+k+","+round+","+xAxis+","+yAxis+","+relYMin+","+relYMax+","+f+"\n";
                         fill[f] = world.mapSets[x][y].data[k];
                     }
                 }
@@ -223,6 +224,7 @@ DataManager.loadMapData = function (mapId) {
 DataManager.waitForComplete = function (mapId) {
     if (Mapper.DataManager !== undefined && Mapper.DataManager.isMapsReady) {
         console.log("Mapper: Maps have been merged.");
+        console.log(Mapper.DataManager.csv);
         if (mapId > 0) {
             const filename = "Map%1_combined.json".format(mapId.padZero(3));
             this.loadDataFile("$dataMap", filename);
