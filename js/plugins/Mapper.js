@@ -11,6 +11,7 @@ Mapper_DataManager.prototype.initialize = function () {
     this.worldSets = new Array();
     this.isMapsReady = false;
     this.csv = "map,sIndex,renDistance,xAxis,yAxis,centerMapX,centerMapY,mapWidth,AdjsIndex,relXAxis,relYAxis,renWW,renWH,mapHeight,Round,Rows,Columns,mapH,mapW,Layers,finalIndex\n";
+    
     this.loadMaps();
 };
 
@@ -77,28 +78,26 @@ Mapper_DataManager.prototype.createWorldSets = function (object) {
         }
     });
 
-            let world = this.getWorld(object._world);
+    let world = this.getWorld(object._world);
 
-            //get world boundaries.
-            if (world.xMin > object._worldX || world.xMin == null) {
-                world.xMin = object._worldX
-            }
-            if (world.yMin > object._worldY || world.yMin == null) {
-                world.yMin = object._worldY;
-            }
-            if (world.xMax < object._worldX || world.xMax == null) {
-                world.xMax = object._worldX;
-            }
-            if (world.yMax < object._worldY || world.yMax == null) {
-                world.yMax = object._worldY;
-            }
-
-            if (!world.mapSets.hasOwnProperty(object._worldX)) {
-                world.mapSets[object._worldX] = new Array();
-            }
-
-            world.mapSets[object._worldX][object._worldY] = object;
-            this.worldSets[world.name] = world;
+    //get world boundaries.
+    if (world.xMin > object._worldX || world.xMin == null) {
+        world.xMin = object._worldX
+    }
+    if (world.yMin > object._worldY || world.yMin == null) {
+        world.yMin = object._worldY;
+    }
+    if (world.xMax < object._worldX || world.xMax == null) {
+        world.xMax = object._worldX;
+    }
+    if (world.yMax < object._worldY || world.yMax == null) {
+        world.yMax = object._worldY;
+    }
+    if (!world.mapSets.hasOwnProperty(object._worldX)) {
+        world.mapSets[object._worldX] = new Array();
+    }
+    world.mapSets[object._worldX][object._worldY] = object;
+    this.worldSets[world.name] = world;
 };
 
 Mapper_DataManager.prototype.getWorld = function (name) {
@@ -114,6 +113,15 @@ Mapper_DataManager.prototype.waitForMaps = function () {
     }
     else {
         setTimeout(function () { this.waitForMaps() }.bind(this), 2500);
+    }
+};
+
+Mapper_DataManager.prototype.wait = function (b,e) {
+    if (b) {
+        e();
+    }
+    else {
+        setTimeout(function () { this.wait(b,e) }.bind(this), 2500);
     }
 };
 
@@ -188,12 +196,20 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
             e.y += mapH;
         }
     });
+    
+    //Offset start location
+    if (map.id == $dataSystem.startMapId){
+        $dataSystem.startX += mapW;
+        $dataSystem.startY += mapH;
+        $gamePlayer.reserveTransfer(map.id, $dataSystem.startX, $dataSystem.startY, 0, 0);
+    }
+
     mapClone.width = mapWidth;
     mapClone.height = mapHeight;
-        let fs = require("fs");
-        let id = parseInt(map.id).toString();
-        let filename = "Map%1".format(id.padZero(3));
-        fs.writeFileSync("data/" + filename + "_combined.json", JSON.stringify(mapClone));
+    let fs = require("fs");
+    let id = parseInt(map.id).toString();
+    let filename = "Map%1".format(id.padZero(3));
+    fs.writeFileSync("data/" + filename + "_combined.json", JSON.stringify(mapClone));
 };
 
 waitForMap = function () {
@@ -204,14 +220,11 @@ waitForMap = function () {
         setTimeout(waitForMap, 2500);
     }
 };
-
-
 //=============================================================================
 // Mapper.js
 //=============================================================================
 var Imported = Imported || {};
 Imported.Mapper = "1.0.0";
-
 var Mapper = Mapper || {};
 /*:
 * @plugindesc Mapper is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin
@@ -235,8 +248,6 @@ PluginManager.registerCommand("Mapper", "jms", args => {
     console.log($gamePlayer.x);
 });
 
-
-
 /**Override loadMapData, so that the game reads the altered maps instead of the originals**/
 DataManager.loadMapData = function (mapId) {
     this.waitForComplete(mapId);
@@ -258,7 +269,3 @@ DataManager.waitForComplete = function (mapId) {
         setTimeout(function () { this.waitForComplete(mapId) }.bind(this), 2500);
     }
 };
-
-
-
-
