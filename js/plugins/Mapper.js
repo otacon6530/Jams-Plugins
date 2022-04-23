@@ -152,12 +152,14 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
     let mapW = mapWidth/renWW;
     let mapH = mapHeight/renWH;
     let fill = new Array(w * 3 * h * 3 * 6).fill(0);//fill for blank sectors
+    let e = new Array();
 
     for (let y = yMax; y >= yMin; y--) {//loop top to bottom sectors
         for (let x = xMin; x <= xMax; x++) {//loop left to right sectors
             for (let k = 0; k < w * h *6; k++) {//loop through the data array.
                 if (x in world.mapSets) { //verify the map exists on the x axis.
                     if (y in world.mapSets[x]) { //verify the map exists on the y axis.
+                        let neighborMap = world.mapSets[x][y];
                         let sIndex = k;
                         let xAxis = x; 
                         let yAxis = y; 
@@ -170,13 +172,22 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
                         let Columns	 =-relYAxis+1;
                         let finalIndex =AdjsIndex + ((renWW-1)*(mapWidth/renWW)*Round) + (mapWidth/renWW)*Rows +(mapWidth*mapHeight/renWH)*Columns + (mapHeight*mapWidth)*Layers;
                         this.csv += map.id+","+sIndex+","+renDistance+","+xAxis+","+yAxis+","+centerMapX+","+centerMapY+","+mapWidth+","+AdjsIndex+","+relXAxis+","+relYAxis+","+renWW+","+renWH+","+mapHeight+","+Round+","+Rows+","+Columns+","+mapH+","+mapW+","+Layers+","+finalIndex+"\n";
-                        fill[finalIndex] = world.mapSets[x][y].data[k];
+                        fill[finalIndex] = neighborMap.data[k];
+                        
                     }
                 }
             }
         }
     }
     mapClone.data = fill;
+
+    //Primay Map event shifting
+    mapClone.events.forEach(e => {
+        if(e !== null){
+            e.x += mapW;
+            e.y += mapH;
+        }
+    });
     mapClone.width = mapWidth;
     mapClone.height = mapHeight;
         let fs = require("fs");
@@ -220,8 +231,8 @@ var Mapper = Mapper || {};
     waitForMap();
 })();
 
-PluginManager.registerCommand("MyPlugin", "jms", args => {
-    //todo
+PluginManager.registerCommand("Mapper", "jms", args => {
+    console.log($gamePlayer.x);
 });
 
 
@@ -235,7 +246,7 @@ DataManager.loadMapData = function (mapId) {
 DataManager.waitForComplete = function (mapId) {
     if (Mapper.DataManager !== undefined && Mapper.DataManager.isMapsReady) {
         console.log("Mapper: Maps have been merged.");
-        console.log(Mapper.DataManager.csv);
+        //console.log(Mapper.DataManager.csv);
         if (mapId > 0) {
             const filename = "Map%1_combined.json".format(mapId.padZero(3));
             this.loadDataFile("$dataMap", filename);
