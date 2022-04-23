@@ -10,7 +10,7 @@ Mapper_DataManager.prototype.initialize = function () {
     this._loaded = 0;
     this.worldSets = new Array();
     this.isMapsReady = false;
-    this.csv = "mapRound,LayerRound,map.id,xMin,xMax,yMin,yMax,k,round,xAxis,yAxis,relYMin,relYMax,fillPos\n";
+    this.csv = "map,sIndex,renDistance,xAxis,yAxis,centerMapX,centerMapY,mapWidth,AdjsIndex,relXAxis,relYAxis,renWW,renWH,mapHeight,Round,Rows,Columns,mapH,mapW,Layers,finalIndex\n";
     this.loadMaps();
 };
 
@@ -74,6 +74,8 @@ Mapper_DataManager.prototype.createWorldSets = function (object) {
             object._world = arr[0];
             object._worldX = arr[1];
             object._worldY = arr[2];
+        }
+    });
 
             let world = this.getWorld(object._world);
 
@@ -97,8 +99,6 @@ Mapper_DataManager.prototype.createWorldSets = function (object) {
 
             world.mapSets[object._worldX][object._worldY] = object;
             this.worldSets[world.name] = world;
-        }
-    });
 };
 
 Mapper_DataManager.prototype.getWorld = function (name) {
@@ -121,7 +121,6 @@ Mapper_DataManager.prototype.build = function () {
     //Loop through all worlds
     Object.values(this.worldSets).forEach(world => {
         //Loop through all maps
-        console.log("mapRound,LayerRound,map.id,xMin,xMax,yMin,yMax,k,round,xAxis,yAxis,relYMin,relYMax,fillPos");
         for (let i = world.xMin; i <= world.xMax; i++) {
             for (let j = world.yMin; j <= world.yMax; j++) {
                 map = world.mapSets[i][j];
@@ -136,38 +135,50 @@ Mapper_DataManager.prototype.build = function () {
 };
 
 Mapper_DataManager.prototype.createSector = function (map, world) {
-    const mapClone = JSON.parse(JSON.stringify(map));//I need the original data in place for the other maps.
-    let xMin = parseInt(mapClone._worldX) - 1;
-    let yMin = parseInt(mapClone._worldY) - 1;
-    let xMax = parseInt(mapClone._worldX) + 1;
-    let yMax = parseInt(mapClone._worldY) + 1;
-    let w = mapClone.width;
-    let h = mapClone.height;
+    let mapClone = JSON.parse(JSON.stringify(map));//I need the original data in place for the other maps.
+    let xMin = parseInt(map._worldX) - 1;
+    let yMin = parseInt(map._worldY) - 1;
+    let xMax = parseInt(map._worldX) + 1;
+    let yMax = parseInt(map._worldY) + 1;
+    let w = map.width;
+    let h = map.height;
+    let centerMapX = map._worldX;
+    let centerMapY	= map._worldY;
+    let renDistance = 1; 
+    let renWW	 =2*renDistance+1;
+    let mapWidth	 = w*renWW;
+    let renWH	 = renWW;
+    let mapHeight	 = h*renWH;
+    let mapW = mapWidth/renWW;
+    let mapH = mapHeight/renWH;
     let fill = new Array(w * 3 * h * 3 * 6).fill(0);//fill for blank sectors
-    let i = 0;
+
     for (let y = yMax; y >= yMin; y--) {//loop top to bottom sectors
         for (let x = xMin; x <= xMax; x++) {//loop left to right sectors
-            for (let k = 0; k < w * h * 6; k++) {//loop through the data array.
+            for (let k = 0; k < w * h *6; k++) {//loop through the data array.
                 if (x in world.mapSets) { //verify the map exists on the x axis.
                     if (y in world.mapSets[x]) { //verify the map exists on the y axis.
-                        let xAxis = x - xMax + 1;//Get relational distance of x.
-                        let yAxis = y - yMax + 1;//Get relational distance of y.
-                        let relYMin = yMin - yMax + 1;//Get relational y minimum.
-                        let relYMax = yMax - yMin - 1;//Get relational y maximum.
-                        let mapRound = ((k) - (k) % (w*h))/(w*h) //Divide values by the width to know which map to hit.
-                        let round = Math.floor((k - (mapRound * w * h))/ w); //Divide values by the width to know which map to hit.
-                        let fillPos = k - (mapRound * w * h) + w * (xAxis + 1) + (round * 2 * (relYMax - relYMin + 1)) + ((relYMax - yAxis) * w * h * (relYMax - relYMin + 1));
-                        let f = fillPos + (mapRound* w * h * 3 * 3);
-                        this.csv += mapRound+","+map.id+","+xMin+","+xMax+","+yMin+","+yMax+","+k+","+round+","+xAxis+","+yAxis+","+relYMin+","+relYMax+","+f+"\n";
-                        fill[f] = world.mapSets[x][y].data[k];
+                        let sIndex = k;
+                        let xAxis = x; 
+                        let yAxis = y; 
+                        let Layers	 = (sIndex - (sIndex % (mapW*mapH)))/(mapW*mapH);
+                        let AdjsIndex	 = (sIndex-(Layers*mapH*mapW));
+                        let relXAxis	 = xAxis-centerMapX;
+                        let relYAxis	 = yAxis-centerMapY;
+                        let Round	 =(AdjsIndex - (AdjsIndex % (mapWidth/renWW)))/(mapWidth/renWW)
+                        let Rows	 = relXAxis+1;
+                        let Columns	 =-relYAxis+1;
+                        let finalIndex =AdjsIndex + ((renWW-1)*(mapWidth/renWW)*Round) + (mapWidth/renWW)*Rows +(mapWidth*mapHeight/renWH)*Columns + (mapHeight*mapWidth)*Layers;
+                        this.csv += map.id+","+sIndex+","+renDistance+","+xAxis+","+yAxis+","+centerMapX+","+centerMapY+","+mapWidth+","+AdjsIndex+","+relXAxis+","+relYAxis+","+renWW+","+renWH+","+mapHeight+","+Round+","+Rows+","+Columns+","+mapH+","+mapW+","+Layers+","+finalIndex+"\n";
+                        fill[finalIndex] = world.mapSets[x][y].data[k];
                     }
                 }
             }
         }
     }
     mapClone.data = fill;
-    mapClone.width = 9;
-    mapClone.height = 9;
+    mapClone.width = mapWidth;
+    mapClone.height = mapHeight;
         let fs = require("fs");
         let id = parseInt(map.id).toString();
         let filename = "Map%1".format(id.padZero(3));
