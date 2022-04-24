@@ -1,4 +1,14 @@
+//import { Debugger } from './Jams.Debugger.mjs';
   /**Define Objects**/
+function Mapper_EventManager() {
+    this.initialize(...arguments);
+}
+
+Mapper_EventManager.prototype.initialize = function () {
+    this.mapId = null;
+    
+};
+
 function Mapper_DataManager() {
     this.initialize(...arguments);
 }
@@ -11,7 +21,7 @@ Mapper_DataManager.prototype.initialize = function () {
     this.worldSets = new Array();
     this.isMapsReady = false;
     this.csv = "map,sIndex,renDistance,xAxis,yAxis,centerMapX,centerMapY,mapWidth,AdjsIndex,relXAxis,relYAxis,renWW,renWH,mapHeight,Round,Rows,Columns,mapH,mapW,Layers,finalIndex\n";
-    
+    this._posDiv = null;
     this.loadMaps();
 };
 
@@ -209,7 +219,7 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
     let fs = require("fs");
     let id = parseInt(map.id).toString();
     let filename = "Map%1".format(id.padZero(3));
-    fs.writeFileSync("data/" + filename + "_combined.json", JSON.stringify(mapClone));
+    fs.writeFileSync("data/combined/" + filename + ".json", JSON.stringify(mapClone));
 };
 
 waitForMap = function () {
@@ -259,7 +269,7 @@ DataManager.waitForComplete = function (mapId) {
         console.log("Mapper: Maps have been merged.");
         //console.log(Mapper.DataManager.csv);
         if (mapId > 0) {
-            const filename = "Map%1_combined.json".format(mapId.padZero(3));
+            const filename = "combined/Map%1.json".format(mapId.padZero(3));
             this.loadDataFile("$dataMap", filename);
         } else {
             this.makeEmptyMap();

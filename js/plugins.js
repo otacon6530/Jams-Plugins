@@ -4,5 +4,6 @@ var $plugins =
 [
 {"name":"GALV_LayerGraphicsMZ","status":false,"description":"(v.1.2) Create graphic layers for parallax mapping, fog, etc. View documentation for plugin commands.","parameters":{"fixPosition":"true"}},
 {"name":"MyPlugin","status":false,"description":"Game Plugin  // Describe your plugin","parameters":{"command      //name of a parameter you want the user to edit":"na    // set default value for the parameter"}},
-{"name":"Mapper","status":true,"description":"Mapper is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin","parameters":{"command      //name of a parameter you want the user to edit":"na    // set default value for the parameter"}}
+{"name":"Jams_Mapper","status":true,"description":"Mapper is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin","parameters":{"command      //name of a parameter you want the user to edit":"na    // set default value for the parameter"}},
+{"name":"Jams_Debugger","status":true,"description":"James_Debugger is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin","parameters":{"command      //name of a parameter you want the user to edit":"na    // set default value for the parameter"}}
 ];
