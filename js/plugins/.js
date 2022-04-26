@@ -1,4 +1,13 @@
   /**Define Objects**/
+function Mapper_EventManager() {
+    this.initialize(...arguments);
+}
+
+Mapper_EventManager.prototype.initialize = function () {
+    this.mapId = null;
+    
+};
+
 function Mapper_DataManager() {
     this.initialize(...arguments);
 }
@@ -11,7 +20,7 @@ Mapper_DataManager.prototype.initialize = function () {
     this.worldSets = new Array();
     this.isMapsReady = false;
     this.csv = "map,sIndex,renDistance,xAxis,yAxis,centerMapX,centerMapY,mapWidth,AdjsIndex,relXAxis,relYAxis,renWW,renWH,mapHeight,Round,Rows,Columns,mapH,mapW,Layers,finalIndex\n";
-    
+    this._posDiv = null;
     this.loadMaps();
 };
 
@@ -242,6 +251,21 @@ var Mapper = Mapper || {};
 */
 (function () {
     waitForMap();
+
+    var _updateFrameCount = SceneManager.updateFrameCount;                   // <-- Reference
+    SceneManager.updateFrameCount = function() {
+        if(Graphics.frameCount % 10 == 0){ 
+            if($gamePlayer){
+            //Mapper._posDiv.textContent = "("+$gamePlayer.x.padZero(3)+","+$gamePlayer.y.padZero(3)+")";
+            
+            }
+        }
+        _updateFrameCount();  
+    };
+    Mapper.positionListener = function(){
+
+
+    }
 })();
 
 PluginManager.registerCommand("Mapper", "jms", args => {
@@ -268,4 +292,105 @@ DataManager.waitForComplete = function (mapId) {
     else {
         setTimeout(function () { this.waitForComplete(mapId) }.bind(this), 2500);
     }
+};
+
+var _FPSCounter = Graphics.FPSCounter; 
+Graphics.FPSCounter.prototype._createElements = function() {
+    this._boxDiv = document.createElement("div");
+    this._labelDiv = document.createElement("div");
+    this._numberDiv = document.createElement("div");
+    this._boxDiv.id = "fpsCounterBox";
+    this._labelDiv.id = "fpsCounterLabel";
+    this._numberDiv.id = "fpsCounterNumber";
+    this._boxDiv.style.display = "none";
+
+    this._boxDiv.appendChild(this._labelDiv);
+    this._boxDiv.appendChild(this._numberDiv);
+    document.body.appendChild(this._boxDiv);
+
+    this._poslabelDiv = document.createElement("div");
+    this._posDiv = document.createElement("div");
+    this._mapLabelDiv = document.createElement("div");
+    this._mapDiv = document.createElement("div");
+    this._poslabelDiv.id = "posCounterLabel";
+    this._posDiv.id = "fpsCounterPos";
+    this._mapLabelDiv.id = "mapLabel";
+    this._mapDiv.id = "map";
+    this._boxDiv.appendChild(this._poslabelDiv);
+    this._boxDiv.appendChild(this._posDiv);
+    this._boxDiv.appendChild(this._mapDiv);
+    this._boxDiv.appendChild(this._mapLabelDiv);
+    this._posDiv.textContent = "(###,###)";
+    this._poslabelDiv.textContent = "Pos";
+    this._mapLabelDiv.textContent = "Map";
+
+    Mapper._posDiv = this._posDiv;
+
+    const addCSS = css => document.head.appendChild(document.createElement("style")).innerHTML=css;
+    addCSS("#fpsCounterBox{ height: 120px; width: 120px; }");
+    addCSS("#posCounterLabel {position: absolute; \
+        top: 75px; \
+        left: 0px; \
+        padding: 5px 10px;\
+        height: 30px;\
+        line-height: 32px;\
+        font-size: 12px;\
+        font-family: rmmz-numberfont, sans-serif;\
+        color: #fff;\
+        text-align: left;\
+    }");
+
+    addCSS("#fpsCounterPos {\
+        position: absolute; \
+        top: 75px; \
+        right: 0px;\
+        padding: 5px 10px;\
+        height: 30px;\
+        line-height: 30px;\
+        font-size: 14px;\
+        font-family: rmmz-numberfont, monospace;\
+        color: #fff;\
+        text-align: left;\
+    }");
+    addCSS("#mapLabel {position: absolute; \
+        top: 35px; \
+        left: 0px; \
+        padding: 5px 10px;\
+        height: 30px;\
+        line-height: 32px;\
+        font-size: 12px;\
+        font-family: rmmz-numberfont, sans-serif;\
+        color: #fff;\
+        text-align: left;\
+    }");
+
+    addCSS("#map {\
+        position: absolute; \
+        top: 35px; \
+        right: 0px;\
+        padding: 5px 10px;\
+        height: 30px;\
+        line-height: 30px;\
+        font-size: 14px;\
+        font-family: rmmz-numberfont, monospace;\
+        color: #fff;\
+        text-align: left;\
+    }");
+};
+
+Graphics.FPSCounter.prototype._update = function() {
+    const count = this._showFps ? this.fps : this.duration;
+    this._labelDiv.textContent = this._showFps ? "FPS" : "ms";
+    this._numberDiv.textContent = count.toFixed(0);
+    if($dataMap){
+        this._mapDiv.textContent = $dataMap.displayName;
+    }
+};
+
+var realConsoleLog = console.log;
+console.log = function () {
+    var message = [].join.call(arguments, " ");
+    // Display the message somewhere... (jQuery example)
+    Mapper._posDiv.textContent = message;
+    realConsoleLog.apply(console, arguments);
 };
