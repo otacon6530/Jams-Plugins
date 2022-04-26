@@ -1,5 +1,4 @@
-//import { Debugger } from './Jams.Debugger.mjs';
-  /**Define Objects**/
+/**Define Objects**/
 function Mapper_EventManager() {
     this.initialize(...arguments);
 }

@@ -7,49 +7,14 @@ Jams_DebugManager.prototype.initialize = function () {
     this._boxDiv = null;
     this.x = 0;
     this.y = 0;
-    this.wait(this.checkDiv,this.addMetric)
-    //this.addMetric("Test","Hi");
-};
+    this.par = this.getPluginParameters();
 
-Jams_DebugManager.prototype.checkDiv = function () {
-    if (this._boxDiv !== null) {
-        return true;
-    }
-    return false;
-};
-
-Jams_DebugManager.prototype.wait = function (b,e) {
-    if (b) {
-        e();
-    }
-    else {
-        setTimeout(function () { this.wait(b,e) }.bind(this), 2500);
-    }
-};
-
-Jams_DebugManager.prototype.addMetric = function () {
-    let label = "Test";
-    let value = "value";
+    //change the fpsCounterBox css
     const addCSS = css => document.head.appendChild(document.createElement("style")).innerHTML=css;
-    let labelDiv = document.createElement("div");
-    let valueDiv = document.createElement("div");
-console.log("hi");
-    //labelDiv.id = "JAMS_DebuggerLabel"+"1";
-    //valueDiv.id = "JAMS_DebuggerValue"+"1";
-    //this._boxDiv.appendChild(labelDiv);
-    //this._boxDiv.appendChild(valueDiv);
-    //this.labelDiv.textContent = label;
-    //this.valueDiv.textContent = value();
-    //a = [];
-    //a.label = label;
-    //a.value = value;
-    //a.labelDiv = labelDiv;
-    //a.valueDiv = valueDiv;
-    //this.metrics.push(a);
-
-    addCSS("#"+labelDiv.id+" {position: absolute; \
-        top: 75px; \
-        left: 0px; \
+    addCSS("#fpsCounterLabel {\
+        position: relative;\
+        top: 0px;\
+        left: 0px;\
         padding: 5px 10px;\
         height: 30px;\
         line-height: 32px;\
@@ -57,20 +22,130 @@ console.log("hi");
         font-family: rmmz-numberfont, sans-serif;\
         color: #fff;\
         text-align: left;\
-    }");
-
-    addCSS("#"+valueDiv.id+"{\
-        position: absolute; \
-        top: 75px; \
+    }\
+    #fpsCounterNumber {\
+        position: relative;\
+        top: 0px;\
         right: 0px;\
         padding: 5px 10px;\
         height: 30px;\
         line-height: 30px;\
-        font-size: 14px;\
+        font-size: 24px;\
         font-family: rmmz-numberfont, monospace;\
         color: #fff;\
+        text-align: right;\
+    }\
+    #fpsCounterBox {\
+        width: max-content;\
+        height: auto;\
+        position: relative;\
+        background: rgba(0,0,0,.5);\
+        opacity: 1;\
+        margin: 0;\
+        padding: 0;\
+        overflow: auto;\
+    }\
+    #fpsCounterBox div {\
+        float: left;\
+        position: relative;\
+        height: 30px;\
+        line-height: 32px;\
+        font-size: 12px;\
+        font-family: rmmz-numberfont, sans-serif;\
+        color: #fff;\
         text-align: left;\
-    }");
+        margin: 5px;\
+        padding: 0px;\
+    }\
+    .vl {\
+        border-left: 3px solid rgba(169, 169, 169, 0.5);\
+      }");
+};
+
+//Checkt to see if _boxDiv has been set.
+Jams_DebugManager.prototype.checkDiv = function () {
+    if (this._boxDiv !== null) {
+        return true;
+    }
+    return false;
+};
+
+//Generic wait function
+Jams_DebugManager.prototype.wait = function (b,e) {
+    const checkfunc = b.bind(this);
+    if (checkfunc()) {
+        const func = e.bind(this);
+        func();
+    }
+    else {
+        setTimeout(function () { this.wait(b,e) }.bind(this), 2500);
+    }
+};
+
+//Update the value of each metric
+Jams_DebugManager.prototype.update = function (b) {
+    this.metrics.forEach(element => {
+        if(b == element.page){
+            element.labelDiv.hidden = false;
+            element.valueDiv.hidden = false;
+            element.divider.hidden = false;
+            element.valueDiv.textContent = element.value.value;
+
+        }else{
+            element.labelDiv.hidden = true;
+            element.valueDiv.hidden = true;
+            element.divider.hidden = true;
+        }
+    });
+};
+
+Jams_DebugManager.prototype.getPluginParameters = function() {
+    var a = document.currentScript || (function() {
+        var b = document.getElementsByTagName('script');
+        return b[b.length - 1];
+    })();
+    return PluginManager.parameters(a.src.substring((a.src.lastIndexOf('/') + 1), a.src.indexOf('.js')));
+}
+
+Jams_DebugManager.prototype.addMetric = function (label, value, page = 0) {
+    if (this.checkDiv()) {
+        this.createMetric(label, value, page);
+    }
+    else {
+        setTimeout(function () { this.addMetric(label, value, page) }.bind(this), 2500);
+    }
+};
+
+//Create metric objects and add them to the fps div.
+Jams_DebugManager.prototype.createMetric = function (label, value, page = 0) {
+    page = page>0 ? false: true; 
+
+    //general variables
+    let id = this.metrics.length;
+
+    //create the label
+    let labelDiv = document.createElement("div");
+    labelDiv.className = "jams_page"+page;
+    labelDiv.id = "JAMS_DebuggerLabel"+id;
+    this._boxDiv.appendChild(labelDiv);
+    labelDiv.textContent = label;
+     
+    //create the value
+    let valueDiv = document.createElement("div");
+    valueDiv.className = "jams_page"+page;
+    valueDiv.id = "JAMS_DebuggerValue"+id;
+    this._boxDiv.appendChild(valueDiv);
+
+    //Divider
+    let vl = document.createElement("div");
+    vl.className = "jams_page"+page;
+    vl.className = "vl";
+    this._boxDiv.appendChild(vl);
+
+    //Push to array of objects
+    this.metrics.push({"label": label, "labelDiv": labelDiv, "valueDiv": valueDiv, "value": value, "page": page, "divider": vl});
+    
+    this.update();
 };
 
   //=============================================================================
@@ -80,69 +155,85 @@ var Imported = Imported || {};
 Imported.Jams_Debugger = "1.0.0";
 var Jams_Debugger = Jams_Debugger || {};
 /*:
-* @plugindesc James_Debugger is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin
-* @author Michael Stephens       // your name goes here *
-* @param command      //name of a parameter you want the user to edit
-* @desc command parameters       //short description of the parameter
-* @default na    // set default value for the parameter
- * @help
- *
- * Plugin Command:
- * jms hello  # Say hello world in the console to test the plugin.
- * @command jms
- * @text jms
- * @desc Nothing at this time.
+* @plugindesc Debugger that adds more metrics to the FPS window when you press f2.
+* @author Michael Stephens
+* @param enablePos
+* @text enablePos
+* @default true
+*
+* @param posPage
+* @text posPage
+* @default 0
+*
+* @param enableConsolePeek
+* @text enableConsolePeek
+* @default true
+*
+* @param consolePeekPage
+* @text consolePeekPage
+* @default both
+*
 */
 
 (function () {
-    Jams_Debugger.Manager = new Jams_DebugManager();
 
+    Jams_Debugger.Manager = new Jams_DebugManager();
     var _updateFrameCount = SceneManager.updateFrameCount;
-    SceneManager.updateFrameCount = function() {
-        if(Graphics.frameCount % 10 == 0){ 
-            if($gamePlayer && Jams_Debugger.Manager._posDiv !== null){
-            //Jams_Debugger.Manager._posDiv.textContent = "("+$gamePlayer.x.padZero(3)+","+$gamePlayer.y.padZero(3)+")";
+    const pos = {value: "(XXX,YYY)"};
+    console.log(Jams_Debugger.Manager.par);
+    if(Jams_Debugger.Manager.par["enablePos"]=="true"){
+        if(Jams_Debugger.Manager.par["posPage"]=="0"){
+            Jams_Debugger.Manager.addMetric("Pos: ",pos,0);
+        }else if(Jams_Debugger.Manager.par["posPage"]=="1"){
+            Jams_Debugger.Manager.addMetric("Pos: ",pos,1);
+        }else if(Jams_Debugger.Manager.par["posPage"]=="both"){
             
-            }
+            Jams_Debugger.Manager.addMetric("Pos: ",pos,0);
+            Jams_Debugger.Manager.addMetric("Pos: ",pos,1);
+        }
+    }
+    SceneManager.updateFrameCount = function() {
+        if(Graphics.frameCount % 10 == 0 && $gamePlayer){ 
+            pos.value = "("+$gamePlayer.x.padZero(3)+","+$gamePlayer.y.padZero(3)+")";
         }
         _updateFrameCount();  
     };
+
+    var realConsoleLog = console.log;
+    let consolePeek = {value: " "};
+    
+    console.log(Jams_Debugger.Manager.par);
+    console.log = function () {
+        var message = [].join.call(arguments, " ");
+        consolePeek = {value: message};
+        if(Jams_Debugger.Manager.par['enableConsolePeek'] == "true"){
+            if(Jams_Debugger.Manager.par["consolePeekPage"] == "0"){
+                Jams_Debugger.Manager.addMetric("Console Peek: ",consolePeek,0);
+            }else if(Jams_Debugger.Manager.par["consolePeekPage"] == "1"){
+                Jams_Debugger.Manager.addMetric("Console Peek: ",consolePeek,1);
+            }else if(Jams_Debugger.Manager.par["consolePeekPage"] == "both"){
+                Jams_Debugger.Manager.addMetric("Console Peek: ",consolePeek,0);
+                Jams_Debugger.Manager.addMetric("Console Peek: ",consolePeek,1);
+            }
+        }   
+        realConsoleLog.apply(console, arguments);
+    };
 })();
 
-DataManager.loadMapData = function (mapId) {
-    this.waitForComplete(mapId);
-};
+    Graphics.FPSCounter.prototype._jamsCreateElements = Graphics.FPSCounter.prototype._createElements;
+    Graphics.FPSCounter.prototype._createElements = function() {
+        this._jamsCreateElements();
+        let vl = document.createElement("div");
+        vl.className = "vl";
+        this._boxDiv.appendChild(vl);
+        Jams_Debugger.Manager._boxDiv = this._boxDiv;
+    };
 
-
-Graphics.FPSCounter.prototype._update = function() {
-    const count = this._showFps ? this.fps : this.duration;
-    this._labelDiv.textContent = this._showFps ? "FPS" : "ms";
-    this._numberDiv.textContent = count.toFixed(0);
-    if($dataMap){
-        //this._mapDiv.textContent = $dataMap.displayName;
-    }
-};
-
-Graphics.FPSCounter.prototype._createElements = function() {
-    this._boxDiv = document.createElement("div");
-    this._labelDiv = document.createElement("div");
-    this._numberDiv = document.createElement("div");
-    this._boxDiv.id = "fpsCounterBox";
-    this._labelDiv.id = "fpsCounterLabel";
-    this._numberDiv.id = "fpsCounterNumber";
-    this._boxDiv.style.display = "none";
-    this._boxDiv.appendChild(this._labelDiv);
-    this._boxDiv.appendChild(this._numberDiv);
-    document.body.appendChild(this._boxDiv);
-    Jams_Debugger.Manager._boxDiv = this._boxDiv;
-};
-
-var realConsoleLog = console.log;
-console.log = function () {
-    var message = [].join.call(arguments, " ");
-    // Display the message somewhere... (jQuery example)
-    if(Jams_Debugger.Manager._posDiv !== null){
-    //Jams_Debugger.Manager._posDiv.textContent = message;
-    }   
-    realConsoleLog.apply(console, arguments);
-};
+    Graphics.FPSCounter.prototype._update = function() {
+        const count = this._showFps ? this.fps : this.duration;
+        this._labelDiv.textContent = this._showFps ? "FPS" : "ms";
+        this._numberDiv.textContent = count.toFixed(0);
+        if($dataMap){
+            Jams_Debugger.Manager.update(this._showFps);
+        }
+    };
