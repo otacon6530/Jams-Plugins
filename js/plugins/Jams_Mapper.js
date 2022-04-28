@@ -1,18 +1,8 @@
-/**Define Objects**/
-function Mapper_EventManager() {
+function Jams_Mapper() {
     this.initialize(...arguments);
 }
 
-Mapper_EventManager.prototype.initialize = function () {
-    this.mapId = null;
-    
-};
-
-function Mapper_DataManager() {
-    this.initialize(...arguments);
-}
-
-Mapper_DataManager.prototype.initialize = function () {
+Jams_Mapper.prototype.initialize = function () {
     this.dataSets = new Array();
     this._errors = new Array();
     this._loading = 0;
@@ -21,14 +11,23 @@ Mapper_DataManager.prototype.initialize = function () {
     this.isMapsReady = false;
     this.csv = "map,sIndex,renDistance,xAxis,yAxis,centerMapX,centerMapY,mapWidth,AdjsIndex,relXAxis,relYAxis,renWW,renWH,mapHeight,Round,Rows,Columns,mapH,mapW,Layers,finalIndex\n";
     this._posDiv = null;
-    this.loadMaps();
+    waitForMap();
+};
+
+waitForMap = function () {
+    if (!!$dataMapInfos) {
+        Jams.Mapper.loadMaps(); 
+    }
+    else {
+        setTimeout(waitForMap, 2500);
+    }
 };
 
 /**load all maps**/
-Mapper_DataManager.prototype.loadMaps = function () {
+Jams_Mapper.prototype.loadMaps = function () {
     this._loading = $dataMapInfos.length;
     $dataMapInfos.forEach(map => {
-        if (map !== null && map.id !== "0") {
+        if (map !== null && map.id > 0) {
             let id = parseInt(map.id).toString();
             let filename = "Map%1.json".format(id.padZero(3));
             let name = map.name;
@@ -40,7 +39,7 @@ Mapper_DataManager.prototype.loadMaps = function () {
     this.waitForMaps();
 };
 
-Mapper_DataManager.prototype.loadDataFile = function (name, src, id) {
+Jams_Mapper.prototype.loadDataFile = function (name, src, id) {
     let xhr = new XMLHttpRequest();
     let url = "data/" + src;
     xhr.open("GET", url);
@@ -50,7 +49,7 @@ Mapper_DataManager.prototype.loadDataFile = function (name, src, id) {
     xhr.send();
 };
 
-Mapper_DataManager.prototype.onXhrLoad = function (xhr, name, src, url, id) {
+Jams_Mapper.prototype.onXhrLoad = function (xhr, name, src, url, id) {
     if (xhr.status < 400) {
         this.onLoad(JSON.parse(xhr.responseText), id);
     } else {
@@ -58,19 +57,19 @@ Mapper_DataManager.prototype.onXhrLoad = function (xhr, name, src, url, id) {
     }
 };
 
-Mapper_DataManager.prototype.onXhrError = function (name, src, url) {
+Jams_Mapper.prototype.onXhrError = function (name, src, url) {
     let error = { name: name, src: src, url: url };
     this._loaded++; //go ahead and add 1 even if an error occurred.
     this._errors.push(error);
 };
 
-Mapper_DataManager.prototype.onLoad = function (object, id) {
+Jams_Mapper.prototype.onLoad = function (object, id) {
     this._loaded++;
     object.id = id;
     this.createWorldSets(object);
 };
 
-Mapper_DataManager.prototype.createWorldSets = function (object) {
+Jams_Mapper.prototype.createWorldSets = function (object) {
     //split note by line
     let result = object.note.split(/\r?\n/);
     //if note line is for world position information then 
@@ -109,14 +108,14 @@ Mapper_DataManager.prototype.createWorldSets = function (object) {
     this.worldSets[world.name] = world;
 };
 
-Mapper_DataManager.prototype.getWorld = function (name) {
+Jams_Mapper.prototype.getWorld = function (name) {
     if (!this.worldSets.hasOwnProperty(name)) {
         this.worldSets[name] = { name: name, xMin: null, xMax: null, yMin: null, yMax: null, mapSets: new Array() }
     }
     return this.worldSets[name];
 }
 
-Mapper_DataManager.prototype.waitForMaps = function () {
+Jams_Mapper.prototype.waitForMaps = function () {
     if (this._loaded === this._loading) {
         this.build();
     }
@@ -125,7 +124,7 @@ Mapper_DataManager.prototype.waitForMaps = function () {
     }
 };
 
-Mapper_DataManager.prototype.wait = function (b,e) {
+Jams_Mapper.prototype.wait = function (b,e) {
     if (b) {
         e();
     }
@@ -134,7 +133,7 @@ Mapper_DataManager.prototype.wait = function (b,e) {
     }
 };
 
-Mapper_DataManager.prototype.build = function () {
+Jams_Mapper.prototype.build = function () {
     //Loop through all worlds
     Object.values(this.worldSets).forEach(world => {
         //Loop through all maps
@@ -151,7 +150,7 @@ Mapper_DataManager.prototype.build = function () {
     this.isMapsReady = true;
 };
 
-Mapper_DataManager.prototype.createSector = function (map, world) {
+Jams_Mapper.prototype.createSector = function (map, world) {
     let mapClone = JSON.parse(JSON.stringify(map));//I need the original data in place for the other maps.
     let xMin = parseInt(map._worldX) - 1;
     let yMin = parseInt(map._worldY) - 1;
@@ -221,20 +220,37 @@ Mapper_DataManager.prototype.createSector = function (map, world) {
     fs.writeFileSync("data/combined/" + filename + ".json", JSON.stringify(mapClone));
 };
 
-waitForMap = function () {
-    if (!!$dataMapInfos) {
-        Mapper.DataManager = new Mapper_DataManager();
+/**Override loadMapData, so that the game reads the altered maps instead of the originals**/
+DataManager.loadMapData = function (mapId) {
+    this.waitForComplete(mapId);
+};
+
+//Need to wait for map creation to complete before letting the game engine load the maps.
+DataManager.waitForComplete = function (mapId) {
+    if (Jams.Mapper !== undefined && Jams.Mapper.isMapsReady) {
+        console.log("Mapper: Maps have been merged.");
+        //console.log(Jams.Mapper.csv);
+        if (mapId > 0) {
+            const filename = "combined/Map%1.json".format(mapId.padZero(3));
+            this.loadDataFile("$dataMap", filename);
+        } else {
+            this.makeEmptyMap();
+        }
     }
     else {
-        setTimeout(waitForMap, 2500);
+        setTimeout(function () { this.waitForComplete(mapId) }.bind(this), 2500);
     }
 };
+
 //=============================================================================
 // Mapper.js
 //=============================================================================
+
 var Imported = Imported || {};
-Imported.Mapper = "1.0.0";
-var Mapper = Mapper || {};
+Imported.Jams = "1.0.0";
+var Jams = Jams || {};
+Jams.Mapper = Jams.Mapper || new Jams_Mapper();
+
 /*:
 * @plugindesc Mapper is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin
 * @author Michael Stephens       // your name goes here *
@@ -249,32 +265,3 @@ var Mapper = Mapper || {};
  * @text jms
  * @desc Nothing at this time.
 */
-(function () {
-    waitForMap();
-})();
-
-PluginManager.registerCommand("Mapper", "jms", args => {
-    console.log($gamePlayer.x);
-});
-
-/**Override loadMapData, so that the game reads the altered maps instead of the originals**/
-DataManager.loadMapData = function (mapId) {
-    this.waitForComplete(mapId);
-};
-
-//Need to wait for map creation to complete before letting the game engine load the maps.
-DataManager.waitForComplete = function (mapId) {
-    if (Mapper.DataManager !== undefined && Mapper.DataManager.isMapsReady) {
-        console.log("Mapper: Maps have been merged.");
-        //console.log(Mapper.DataManager.csv);
-        if (mapId > 0) {
-            const filename = "combined/Map%1.json".format(mapId.padZero(3));
-            this.loadDataFile("$dataMap", filename);
-        } else {
-            this.makeEmptyMap();
-        }
-    }
-    else {
-        setTimeout(function () { this.waitForComplete(mapId) }.bind(this), 2500);
-    }
-};
