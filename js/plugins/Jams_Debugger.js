@@ -291,6 +291,16 @@ console.log = function() {
     realConsoleLog.apply(console, arguments);
 };
 
+//$dataMapInfos has been loaded
+DataManager._Jams_onXhrLoad = DataManager.onXhrLoad;
+DataManager.onXhrLoad = function(xhr, name, src, url) {
+    this._Jams_onXhrLoad(xhr, name, src, url);
+    if (name === "$dataMapInfos") {
+        if(this._$dataMapInfosEvent === undefined){this._$dataMapInfosEvent = new Jams_Event(name)};
+        this._$dataMapInfosEvent.update({"debugMsg": name});
+    }
+};
+
 //=============================================================================
 // Strings - throw strings at the bottom of the code, so I don't have to look at them.
 //=============================================================================
