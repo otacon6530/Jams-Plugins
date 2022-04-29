@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_scenes.js v1.4.4
+// rmmz_scenes.js v1.4.3
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -2351,8 +2351,7 @@ Scene_Load.prototype.reloadMapIfUpdated = function() {
         const mapId = $gameMap.mapId();
         const x = $gamePlayer.x;
         const y = $gamePlayer.y;
-        const d = $gamePlayer.direction();
-        $gamePlayer.reserveTransfer(mapId, x, y, d, 0);
+        $gamePlayer.reserveTransfer(mapId, x, y);
         $gamePlayer.requestMapReload();
     }
 };

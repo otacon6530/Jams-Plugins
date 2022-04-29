@@ -2,7 +2,7 @@ function Jams_Mapper() {
     this.initialize(...arguments);
 }
 
-Jams_Mapper.prototype.initialize = function () {
+Jams_Mapper.prototype.initialize = function() {
     this._errors = new Array();
     this._loading = 0;
     this._loaded = 0;
@@ -10,12 +10,16 @@ Jams_Mapper.prototype.initialize = function () {
     this.isMapsReady = false;
     Jams.EventBus.subscribe(
         "$dataMapInfos",
-        object => Jams.Mapper.loadMaps()
-        );
+        object => this.loadMaps()
+    );
+    this.event = Jams.EventBus.subscribe(
+        "playerPos",
+        object => this.transferCheck(object)
+    );
 };
 
 /**load all maps**/
-Jams_Mapper.prototype.loadMaps = function () {
+Jams_Mapper.prototype.loadMaps = function() {
     this._loading = $dataMapInfos.length;
     $dataMapInfos.forEach(map => {
         if (map !== null && map.id > 0) {
@@ -29,7 +33,7 @@ Jams_Mapper.prototype.loadMaps = function () {
     });
 };
 
-Jams_Mapper.prototype.loadDataFile = function (name, src, id) {
+Jams_Mapper.prototype.loadDataFile = function(name, src, id) {
     let xhr = new XMLHttpRequest();
     let url = "data/" + src;
     xhr.open("GET", url);
@@ -39,7 +43,7 @@ Jams_Mapper.prototype.loadDataFile = function (name, src, id) {
     xhr.send();
 };
 
-Jams_Mapper.prototype.onXhrLoad = function (xhr, name, src, url, id) {
+Jams_Mapper.prototype.onXhrLoad = function(xhr, name, src, url, id) {
     if (xhr.status < 400) {
         this.onLoad(JSON.parse(xhr.responseText), id);
     } else {
@@ -47,22 +51,30 @@ Jams_Mapper.prototype.onXhrLoad = function (xhr, name, src, url, id) {
     }
 };
 
-Jams_Mapper.prototype.onXhrError = function (name, src, url) {
-    let error = { name: name, src: src, url: url };
+Jams_Mapper.prototype.onXhrError = function(name, src, url) {
+    let error = {
+        name: name,
+        src: src,
+        url: url
+    };
     this._loaded++; //go ahead and add 1 even if an error occurred.
-    if(this._loaded === this._loading){this.build();}
+    if (this._loaded === this._loading) {
+        this.build();
+    }
 
     this._errors.push(error);
 };
 
-Jams_Mapper.prototype.onLoad = function (object, id) {
+Jams_Mapper.prototype.onLoad = function(object, id) {
     object.id = id;
     this.createWorldSets(object);
     this._loaded++;
-    if(this._loaded === this._loading){this.build();}
+    if (this._loaded === this._loading) {
+        this.build();
+    }
 };
 
-Jams_Mapper.prototype.createWorldSets = function (object) {
+Jams_Mapper.prototype.createWorldSets = function(object) {
     //split note by line
     let result = object.note.split(/\r?\n/);
     //if note line is for world position information then 
@@ -101,14 +113,21 @@ Jams_Mapper.prototype.createWorldSets = function (object) {
     this.worldSets[world.name] = world;
 };
 
-Jams_Mapper.prototype.getWorld = function (name) {
+Jams_Mapper.prototype.getWorld = function(name) {
     if (!this.worldSets.hasOwnProperty(name)) {
-        this.worldSets[name] = { name: name, xMin: null, xMax: null, yMin: null, yMax: null, mapSets: new Array() }
+        this.worldSets[name] = {
+            name: name,
+            xMin: null,
+            xMax: null,
+            yMin: null,
+            yMax: null,
+            mapSets: new Array()
+        }
     }
     return this.worldSets[name];
 }
 
-Jams_Mapper.prototype.build = function () {
+Jams_Mapper.prototype.build = function() {
     //Loop through all worlds
     Object.values(this.worldSets).forEach(world => {
         //Loop through all maps
@@ -126,8 +145,8 @@ Jams_Mapper.prototype.build = function () {
     console.log("Mapper: Maps have been merged.");
 };
 
-Jams_Mapper.prototype.createSector = function (map, world) {
-    let mapClone = JSON.parse(JSON.stringify(map));//I need the original data in place for the other maps.
+Jams_Mapper.prototype.createSector = function(map, world) {
+    let mapClone = JSON.parse(JSON.stringify(map)); //I need the original data in place for the other maps.
     let xMin = parseInt(map._worldX) - 1;
     let yMin = parseInt(map._worldY) - 1;
     let xMax = parseInt(map._worldX) + 1;
@@ -135,36 +154,45 @@ Jams_Mapper.prototype.createSector = function (map, world) {
     let w = map.width;
     let h = map.height;
     let centerMapX = map._worldX;
-    let centerMapY	= map._worldY;
-    let renDistance = 1; 
-    let renWW	 =2*renDistance+1;
-    let mapWidth	 = w*renWW;
-    let renWH	 = renWW;
-    let mapHeight	 = h*renWH;
-    let mapW = mapWidth/renWW;
-    let mapH = mapHeight/renWH;
-    let fill = new Array(w * 3 * h * 3 * 6).fill(0);//fill for blank sectors
+    let centerMapY = map._worldY;
+    let renDistance = 1;
+    let renWW = 2 * renDistance + 1;
+    let mapWidth = w * renWW;
+    let renWH = renWW;
+    let mapHeight = h * renWH;
+    let mapW = mapWidth / renWW;
+    let mapH = mapHeight / renWH;
+    let fill = new Array(w * 3 * h * 3 * 6).fill(0); //fill for blank sectors
     let e = new Array();
 
-    for (let y = yMax; y >= yMin; y--) {//loop top to bottom sectors
-        for (let x = xMin; x <= xMax; x++) {//loop left to right sectors
-            for (let k = 0; k < w * h *6; k++) {//loop through the data array.
+    for (let y = yMax; y >= yMin; y--) { //loop top to bottom sectors
+        for (let x = xMin; x <= xMax; x++) { //loop left to right sectors
+            for (let k = 0; k < w * h * 6; k++) { //loop through the data array.
                 if (x in world.mapSets) { //verify the map exists on the x axis.
                     if (y in world.mapSets[x]) { //verify the map exists on the y axis.
                         let neighborMap = world.mapSets[x][y];
                         let sIndex = k;
-                        let xAxis = x; 
-                        let yAxis = y; 
-                        let Layers	 = (sIndex - (sIndex % (mapW*mapH)))/(mapW*mapH);
-                        let AdjsIndex	 = (sIndex-(Layers*mapH*mapW));
-                        let relXAxis	 = xAxis-centerMapX;
-                        let relYAxis	 = yAxis-centerMapY;
-                        let Round	 =(AdjsIndex - (AdjsIndex % (mapWidth/renWW)))/(mapWidth/renWW)
-                        let Rows	 = relXAxis+1;
-                        let Columns	 =-relYAxis+1;
-                        let finalIndex =AdjsIndex + ((renWW-1)*(mapWidth/renWW)*Round) + (mapWidth/renWW)*Rows +(mapWidth*mapHeight/renWH)*Columns + (mapHeight*mapWidth)*Layers;
+                        let xAxis = x;
+                        let yAxis = y;
+                        let Layers = (sIndex - (sIndex % (mapW * mapH))) / (mapW * mapH);
+                        let AdjsIndex = (sIndex - (Layers * mapH * mapW));
+                        let relXAxis = xAxis - centerMapX;
+                        let relYAxis = yAxis - centerMapY;
+                        let Round = (AdjsIndex - (AdjsIndex % (mapWidth / renWW))) / (mapWidth / renWW)
+                        let Rows = relXAxis + 1;
+                        let Columns = -relYAxis + 1;
+                        let finalIndex = AdjsIndex + ((renWW - 1) * (mapWidth / renWW) * Round) + (mapWidth / renWW) * Rows + (mapWidth * mapHeight / renWH) * Columns + (mapHeight * mapWidth) * Layers;
                         fill[finalIndex] = neighborMap.data[k];
-                        
+                        if (relXAxis === -1 && relYAxis === 0) {
+                            mapClone.leftMapID = neighborMap.id;
+                        } else if (relXAxis === 1 && relYAxis === 0) {
+                            mapClone.rightMapID = neighborMap.id;
+                        } else if (relXAxis === 0 && relYAxis === 1) {
+                            mapClone.upMapID = neighborMap.id;
+                        } else if (relXAxis === 0 && relYAxis === -1) {
+                            mapClone.downMapID = neighborMap.id;
+                        }
+
                     }
                 }
             }
@@ -172,20 +200,27 @@ Jams_Mapper.prototype.createSector = function (map, world) {
     }
     mapClone.data = fill;
 
+
     //Primay Map event shifting
     mapClone.events.forEach(e => {
-        if(e !== null){
+        if (e !== null) {
             e.x += mapW;
             e.y += mapH;
         }
     });
-    
+
     //Offset start location
-    if (map.id == $dataSystem.startMapId){
+    if (map.id == $dataSystem.startMapId) {
         $dataSystem.startX += mapW;
         $dataSystem.startY += mapH;
-        //$gamePlayer.reserveTransfer(map.id, $dataSystem.startX, $dataSystem.startY, 0, 0);
+        $gamePlayer?.reserveTransfer(map.id, $dataSystem.startX, $dataSystem.startY, 0, 2);
     }
+
+    //get the corners
+    mapClone.mintX = w;
+    mapClone.maxtX = w * 2 - 1;
+    mapClone.mintY = h;
+    mapClone.maxtY = h * 2 - 1;
 
     mapClone.width = mapWidth;
     mapClone.height = mapHeight;
@@ -195,17 +230,32 @@ Jams_Mapper.prototype.createSector = function (map, world) {
     fs.writeFileSync("data/combined/" + filename + ".json", JSON.stringify(mapClone));
 };
 
+Jams_Mapper.prototype.transferCheck = function(object) {
+    if (this.isMapsReady && $dataMap) {
+        console.log($dataMap);
+        if (object.x > $dataMap?.maxtX) {
+            $gamePlayer?.reserveTransfer($dataMap.rightMapID, $dataMap.mintX, object.y, 0, 2);
+        } else if (object.x < $dataMap?.mintX) {
+            $gamePlayer?.reserveTransfer($dataMap.leftMapID, $dataMap.maxtX, object.y, 0, 2);
+        } else if (object.y > $dataMap?.maxtY) {
+            $gamePlayer?.reserveTransfer($dataMap.downMapID, object.x, $dataMap.mintY, 0, 2);
+        } else if (object.y < $dataMap?.mintY) {
+            $gamePlayer?.reserveTransfer($dataMap.upMapID, object.x, $dataMap.maxtY, 0, 2);
+        }
+    }
+};
+
 //=============================================================================
 // Hooks
 //=============================================================================
 
 /**Override loadMapData, so that the game reads the altered maps instead of the originals**/
-DataManager.loadMapData = function (mapId) {
+DataManager.loadMapData = function(mapId) {
     this._Jams_waitForComplete(mapId);
 };
 
 //Need to wait for map creation to complete before letting the game engine load the maps.
-DataManager._Jams_waitForComplete = function (mapId) {
+DataManager._Jams_waitForComplete = function(mapId) {
     if (Jams.Mapper !== undefined && Jams.Mapper.isMapsReady) {
         if (mapId > 0) {
             const filename = "combined/Map%1.json".format(mapId.padZero(3));
@@ -213,13 +263,12 @@ DataManager._Jams_waitForComplete = function (mapId) {
         } else {
             this.makeEmptyMap();
         }
-    }
-    else {
-        setTimeout(function () { this._Jams_waitForComplete(mapId)}.bind(this), 250);
+    } else {
+        setTimeout(function() {
+            this._Jams_waitForComplete(mapId)
+        }.bind(this), 250);
     }
 };
-
-
 
 //=============================================================================
 // Mapper.js
@@ -231,11 +280,11 @@ var Jams = Jams || {};
 Jams.Mapper = Jams.Mapper || new Jams_Mapper();
 
 /*:
-* @plugindesc Mapper is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin
-* @author Michael Stephens       // your name goes here *
-* @param command      //name of a parameter you want the user to edit
-* @desc command parameters       //short description of the parameter
-* @default na    // set default value for the parameter
+ * @plugindesc Mapper is a plugin that combines maps together and points to the new maps when the game is ran.// Describe your plugin
+ * @author Michael Stephens       // your name goes here *
+ * @param command      //name of a parameter you want the user to edit
+ * @desc command parameters       //short description of the parameter
+ * @default na    // set default value for the parameter
  * @help
  *
  * Plugin Command:
@@ -243,4 +292,4 @@ Jams.Mapper = Jams.Mapper || new Jams_Mapper();
  * @command jms
  * @text jms
  * @desc Nothing at this time.
-*/
+ */
