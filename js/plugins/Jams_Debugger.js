@@ -60,7 +60,7 @@ Jams_PlayerPosEvent.prototype.initialize = function(name) {
  * @param {string} name the name of the event.
  */
 Jams_PlayerPosEvent.prototype.toString = function() {
-    return "("+this.x.padZero(3)+","+this.y.padZero(3)+")";
+    return this.x !== null ? "("+this.x.padZero(3)+","+this.y.padZero(3)+")" : "(xxx,yyy)";
 };
 
 /**
@@ -82,7 +82,7 @@ Jams_EventBus.prototype.initialize = function() {
  * @Assumption If an event doesn't exist then it is registered as a blank object.
  */
 Jams_EventBus.prototype.subscribe = function(eventType, callback) {
-    const id = this.generateID.next();
+    const id = this.generateID.next().value;
 
     if (!this.subscriptions[eventType])
         this.subscriptions[eventType] = {}

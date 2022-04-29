@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_objects.js v1.4.4
+// rmmz_objects.js v1.4.3
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -5684,7 +5684,7 @@ Game_Party.prototype.isAllDead = function() {
     }
 };
 
-Game_Party.prototype.isEscaped = function() {
+Game_Party.prototype.isEscaped = function(item) {
     return this.isAllDead() && this.hiddenBattleMembers().length > 0;
 };
 
@@ -11305,4 +11305,3 @@ Game_Interpreter.prototype.command357 = function(params) {
 };
 
 //-----------------------------------------------------------------------------
-

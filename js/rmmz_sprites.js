@@ -1,5 +1,5 @@
 //=============================================================================
-// rmmz_sprites.js v1.4.4
+// rmmz_sprites.js v1.4.3
 //=============================================================================
 
 //-----------------------------------------------------------------------------
@@ -302,12 +302,10 @@ Sprite_Character.prototype.setCharacterBitmap = function() {
 };
 
 Sprite_Character.prototype.updateFrame = function() {
-    if (this.bitmap.isReady()) {
-        if (this._tileId > 0) {
-            this.updateTileFrame();
-        } else {
-            this.updateCharacterFrame();
-        }
+    if (this._tileId > 0) {
+        this.updateTileFrame();
+    } else {
+        this.updateCharacterFrame();
     }
 };
 
@@ -3477,7 +3475,7 @@ Spriteset_Map.prototype.updateParallax = function() {
         this._parallax.bitmap = ImageManager.loadParallax(this._parallaxName);
     }
     if (this._parallax.bitmap) {
-        const bitmap = this._parallax.bitmap;
+        bitmap = this._parallax.bitmap;
         this._parallax.origin.x = $gameMap.parallaxOx() % bitmap.width;
         this._parallax.origin.y = $gameMap.parallaxOy() % bitmap.height;
     }
