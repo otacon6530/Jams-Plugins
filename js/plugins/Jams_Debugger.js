@@ -60,7 +60,7 @@ Jams_PlayerPosEvent.prototype.initialize = function(name) {
  * @param {string} name the name of the event.
  */
 Jams_PlayerPosEvent.prototype.toString = function() {
-    return this.x !== null ? "("+this.x.padZero(3)+","+this.y.padZero(3)+")" : "(xxx,yyy)";
+    return "("+this.x.padZero(3)+","+this.y.padZero(3)+")";
 };
 
 /**
@@ -72,7 +72,7 @@ function Jams_EventBus() {
 
 Jams_EventBus.prototype.initialize = function() {
     this.subscriptions = {};
-    this.nextEventID = 0;
+    this.generateID = this.eventIDGenerator();
 };
 
 /**
@@ -82,7 +82,7 @@ Jams_EventBus.prototype.initialize = function() {
  * @Assumption If an event doesn't exist then it is registered as a blank object.
  */
 Jams_EventBus.prototype.subscribe = function(eventType, callback) {
-    const id = this.getNextEventID();
+    const id = this.generateID.next();
 
     if (!this.subscriptions[eventType])
         this.subscriptions[eventType] = {}
@@ -111,12 +111,13 @@ Jams_EventBus.prototype.publish = function(eventType, arg) {
 
 /**
 * @description create an auto incrementing identity
-* @returns {number} the identity
+* @yields {number} the identity
 */
-Jams_EventBus.prototype.getNextEventID = function() {
-    const id = this.nextEventID;
-    this.nextEventID++;
-    return id;
+Jams_EventBus.prototype.eventIDGenerator = function* () {
+    var id = 0;
+    while(true){
+        yield id++;
+    } 
 };
 
 /**
@@ -138,6 +139,8 @@ Jams_FPSManager.prototype.initialize = function() {
     //change the fpsCounterBox css
     const addCSS = css => document.head.appendChild(document.createElement("style")).innerHTML = css;
     addCSS(this.strArr["css"]);
+
+    this.addMetrics();
 };
 
 /**
@@ -173,7 +176,7 @@ Jams_FPSManager.prototype.updateMetric = function(object) {
     let metric = this.metrics[object.name];
     metric.valueDiv.textContent = object.toString();
     Object.keys(this.metrics).forEach(key => {
-        if (Graphics._fpsCounter._showFps == this.metrics[key].page) {
+        if (Graphics._fpsCounter._showFps === this.metrics[key].page) {
             this.metrics[key].labelDiv.hidden = false;
             this.metrics[key].valueDiv.hidden = false;
             this.metrics[key].divider.hidden = false;
@@ -249,11 +252,11 @@ Jams_FPSManager.prototype.createMetric = function(label, subscription, page = 0)
 };
 
 Jams_FPSManager.prototype.addMetrics = function() {
-    if(this.par["enablePos"] == "true"){
-        Jams.FPSManager.addMetric("Pos: ","playerPos", parseInt(this.par["posPage"]));
+    if(this.par["enablePos"] === "true"){
+        this.addMetric("Pos: ","playerPos", parseInt(this.par["posPage"]));
     }
-    if(this.par["enableConsolePeek"] == "true"){
-        Jams.FPSManager.addMetric("Console Peek: ","consolePeek", parseInt(this.par["consolePeekPage"]));
+    if(this.par["enableConsolePeek"] === "true"){
+        this.addMetric("Console Peek: ","consolePeek", parseInt(this.par["consolePeekPage"]));
     }
 };
 
@@ -274,10 +277,8 @@ Graphics.FPSCounter.prototype._createElements = function() {
 //Get player position
 var _updateFrameCount = SceneManager.updateFrameCount;
 SceneManager.updateFrameCount = function() {   
-    if ($gamePlayer) {
         if(this._PosEvent == undefined){this._PosEvent = new Jams_PlayerPosEvent("playerPos")};
-        this._PosEvent.update ({"x": $gamePlayer.x, "y": $gamePlayer.y});
-    }
+        this._PosEvent.update ({"x": $gamePlayer?.x, "y": $gamePlayer?.y});
     _updateFrameCount();
 };
 
@@ -285,9 +286,19 @@ SceneManager.updateFrameCount = function() {
 var realConsoleLog = console.log;
 console.log = function() {
     var message = [].join.call(arguments, " ");
-    if(this._ConPeekEvent == undefined){this._ConPeekEvent = new Jams_Event("consolePeek")};
+    if(this._ConPeekEvent === undefined){this._ConPeekEvent = new Jams_Event("consolePeek")};
         this._ConPeekEvent.update({"debugMsg": message});
     realConsoleLog.apply(console, arguments);
+};
+
+//$dataMapInfos has been loaded
+DataManager._Jams_onXhrLoad = DataManager.onXhrLoad;
+DataManager.onXhrLoad = function(xhr, name, src, url) {
+    this._Jams_onXhrLoad(xhr, name, src, url);
+    if (name === "$dataMapInfos") {
+        if(this._$dataMapInfosEvent === undefined){this._$dataMapInfosEvent = new Jams_Event(name)};
+        this._$dataMapInfosEvent.update({"debugMsg": name});
+    }
 };
 
 //=============================================================================
@@ -370,7 +381,3 @@ Jams.FPSManager = Jams.FPSManager || new Jams_FPSManager();
  * @text consolePeekPage
  * @default 0
  */
-
-(function() {
-    Jams.FPSManager.addMetrics();
-})();
