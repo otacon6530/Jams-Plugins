@@ -8,14 +8,23 @@ Jams_Mapper.prototype.initialize = function() {
     this._loaded = 0;
     this.worldSets = new Array();
     this.isMapsReady = false;
+    this.centerPOS = 0;
     Jams.EventBus.subscribe(
         "$dataMapInfos",
         object => this.loadMaps()
+    );
+    Jams.EventBus.subscribe(
+        "$dataMap",
+        object => console.log("load")
     );
     this.event = Jams.EventBus.subscribe(
         "playerPos",
         object => this.transferCheck(object)
     );
+    this.loadMap = this.createWorldSets;
+    this.loadComplete = this.build;
+    this.csv = "";
+    this.xPos = 0;
 };
 
 /**load all maps**/
@@ -59,7 +68,7 @@ Jams_Mapper.prototype.onXhrError = function(name, src, url) {
     };
     this._loaded++; //go ahead and add 1 even if an error occurred.
     if (this._loaded === this._loading) {
-        this.build();
+        this.loadComplete();
     }
 
     this._errors.push(error);
@@ -67,10 +76,10 @@ Jams_Mapper.prototype.onXhrError = function(name, src, url) {
 
 Jams_Mapper.prototype.onLoad = function(object, id) {
     object.id = id;
-    this.createWorldSets(object);
+    this.loadMap(object);
     this._loaded++;
     if (this._loaded === this._loading) {
-        this.build();
+        this.loadComplete();
     }
 };
 
@@ -143,8 +152,24 @@ Jams_Mapper.prototype.build = function() {
     });
     this.isMapsReady = true;
     console.log("Mapper: Maps have been merged.");
+    
+    this.loadMap = this.mapOffset;
+    this.loadComplete = this.loadComplete;
+
     Graphics._switchFPSCounter();
 };
+
+
+Jams_Mapper.prototype.getMap = function(object) {
+    console.log(object);
+};
+
+Jams_Mapper.prototype.loadComplete = function() {
+   
+    console.log("Map loaded");
+};
+
+
 
 Jams_Mapper.prototype.createSector = function(map, world) {
     let mapClone = JSON.parse(JSON.stringify(map)); //I need the original data in place for the other maps.
@@ -200,7 +225,8 @@ Jams_Mapper.prototype.createSector = function(map, world) {
         }
     }
     mapClone.data = fill;
-
+    mapClone._parallaxLoopX = true;
+    mapClone._parallaxLoopY = true;
 
     //Primay Map event shifting
     mapClone.events.forEach(e => {
@@ -231,19 +257,51 @@ Jams_Mapper.prototype.createSector = function(map, world) {
     fs.writeFileSync("data/combined/" + filename + ".json", JSON.stringify(mapClone));
 };
 
+
+
 Jams_Mapper.prototype.transferCheck = function(object) {
+
     if (this.isMapsReady && $dataMap) {
-        if (object.x > $dataMap?.maxtX) {
-            //$gamePlayer?._Jams_reserveTransfer($dataMap.rightMapID, $dataMap.mintX, object.y, 0, 2);
-            $dataMap.data[3] =3;
+        if (object.x > $dataMap?.maxtX && this?.rightMap !== "Triggered") {
+           this.loading++;
+           this.rightMap = "Triggered";
+           this.xPos = this.xPos +1 >= 3 ? 0: this.xPos + 1;
+           if ($dataMap.rightMapID !== null) {
+                let id = parseInt($dataMap.rightMapID).toString();
+                let filename = "combined/" + "Map%1.json".format(id.padZero(3));
+                this.loadDataFile(id, filename, id);
+            }    
+
         } else if (object.x < $dataMap?.mintX) {
-            //$gamePlayer?._Jams_reserveTransfer($dataMap.leftMapID, $dataMap.maxtX, object.y, 0, 2);
+            //$gamePlayer?.reserveTransfer($dataMap.leftMapID, $dataMap.maxtX, object.y, 0, 2);
         } else if (object.y > $dataMap?.maxtY) {
-            //$gamePlayer?._Jams_reserveTransfer($dataMap.downMapID, object.x, $dataMap.mintY, 0, 2);
+            //$gamePlayer?.reserveTransfer($dataMap.downMapID, object.x, $dataMap.mintY, 0, 2);
         } else if (object.y < $dataMap?.mintY) {
-            //$gamePlayer?._Jams_reserveTransfer($dataMap.upMapID, object.x, $dataMap.maxtY, 0, 2);
+            //$gamePlayer?.reserveTransfer($dataMap.upMapID, object.x, $dataMap.maxtY, 0, 2);
         }
     }
+};
+
+/**
+* @description Shuffle map section depending on what position the map's center should be in.
+* @param map Map object
+* @param xPos the x position on the rendered section of the world (-1,0,or 1)
+* @param yPos the y position on the rendered section of the world (-1,0,or 1)
+*/
+Jams_Mapper.prototype.mapOffset = function(map) {
+    xPos = this.xPos;
+    for (let k = 0; k < map.width * map.height * 6; k++) { //loop through the data array.
+                let segment = map.width/3 //three maps wide.
+                let rows = (k - k%map.width)/map.width;
+                let maps = ((k - k%segment)/segment) - rows*3;
+                let mapReset = maps+xPos>=3? maps+xPos-3: maps+xPos;
+                let kReset =k-maps*segment-rows*map.width;
+                let f = kReset+mapReset*segment+rows*map.width;
+
+                this.csv +=k+","+segment+","+rows+","+maps+","+mapReset+","+kReset+","+f+"\n"; 
+                $dataMap.data[f] = map.data[k];
+        }
+    //console.log(this.csv);
 };
 
 //=============================================================================

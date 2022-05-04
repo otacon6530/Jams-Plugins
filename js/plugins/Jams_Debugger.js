@@ -9,6 +9,7 @@ function Jams_Event() {
 Jams_Event.prototype.initialize = function(name) {
     this.name = name;
     this.debugMsg = "";
+    
 };
 
 /**
@@ -291,13 +292,17 @@ console.log = function() {
     realConsoleLog.apply(console, arguments);
 };
 
-//$dataMapInfos has been loaded
+//$dataMapInfos has been loaded and one for $DataMap
 DataManager._Jams_onXhrLoad = DataManager.onXhrLoad;
 DataManager.onXhrLoad = function(xhr, name, src, url) {
     this._Jams_onXhrLoad(xhr, name, src, url);
     if (name === "$dataMapInfos") {
         if(this._$dataMapInfosEvent === undefined){this._$dataMapInfosEvent = new Jams_Event(name)};
         this._$dataMapInfosEvent.update({"debugMsg": name});
+    }
+    if (name === "$dataMap") {
+        if(this._$dataMapEvent === undefined){this._$dataMapEvent = new Jams_Event(name)};
+        this._$dataMapEvent.update({"debugMsg": name});
     }
 };
 
