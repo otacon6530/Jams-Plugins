@@ -17,14 +17,19 @@ Jams_Mapper.prototype.initialize = function() {
         "$dataMap",
         object => console.log("load")
     );
-    this.event = Jams.EventBus.subscribe(
+    Jams.EventBus.subscribe(
         "playerPos",
         object => this.transferCheck(object)
+    );
+    Jams.EventBus.subscribe(
+        "playerPos",
+        object => this.checkMapSection(object)
     );
     this.loadMap = this.createWorldSets;
     this.loadComplete = this.build;
     this.csv = "";
     this.xPos = 0;
+    Jams.FPSManager.addMetric("Map Sect: ","mapSection",0);
 };
 
 /**load all maps**/
@@ -297,6 +302,27 @@ Jams_Mapper.prototype.mapOffset = function(map) {
         }
     //console.log(this.csv);
 };
+
+/**
+* @description Calculate the map section the player is currently standing in.
+* @param obeject Map section event
+*/
+Jams_Mapper.prototype.checkMapSection = function(object) {
+    if(this._mapSectionEvent == undefined){
+        this._mapSectionEvent = new Jams_PlayerPosEvent("mapSection");
+        this._mapSectionEvent.update ({"x": "", "y": ""});
+    };
+        if($dataMap){
+            const mapSectionWidth = $dataMap.width/3;
+            const mapSectionHeight = $dataMap.height/3;
+            const x = $gamePlayer?.x;
+            const y = $gamePlayer?.y;
+            const xSection = (x - x % mapSectionWidth)/mapSectionWidth-1;
+            const ySection = -(y - y % mapSectionHeight)/mapSectionHeight+1;
+            this._mapSectionEvent.update ({"x": xSection, "y": ySection});
+        }
+};
+
 
 //=============================================================================
 // Hooks

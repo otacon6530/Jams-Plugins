@@ -9,7 +9,6 @@ function Jams_Event() {
 Jams_Event.prototype.initialize = function(name) {
     this.name = name;
     this.debugMsg = "";
-    
 };
 
 /**
