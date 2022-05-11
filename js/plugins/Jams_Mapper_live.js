@@ -169,8 +169,6 @@ Jams_Mapper.prototype.loadComplete = function() {
     console.log("Map loaded");
 };
 
-
-
 Jams_Mapper.prototype.createSector = function(map, world) {
     let mapClone = JSON.parse(JSON.stringify(map)); //I need the original data in place for the other maps.
     let xMin = parseInt(map._worldX) - 1;
@@ -257,8 +255,6 @@ Jams_Mapper.prototype.createSector = function(map, world) {
     fs.writeFileSync("data/combined/" + filename + ".json", JSON.stringify(mapClone));
 };
 
-
-
 Jams_Mapper.prototype.transferCheck = function(object) {
 
     if (this.isMapsReady && $dataMap) {
@@ -283,10 +279,8 @@ Jams_Mapper.prototype.transferCheck = function(object) {
 };
 
 /**
-* @description Shuffle map section depending on what position the map's center should be in.
+* @description Shuffle map sections depending on what position the map's center should be in.
 * @param map Map object
-* @param xPos the x position on the rendered section of the world (-1,0,or 1)
-* @param yPos the y position on the rendered section of the world (-1,0,or 1)
 */
 Jams_Mapper.prototype.mapOffset = function(map) {
     xPos = this.xPos;
