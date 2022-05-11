@@ -60,7 +60,19 @@ Jams_PlayerPosEvent.prototype.initialize = function(name) {
  * @param {string} name the name of the event.
  */
 Jams_PlayerPosEvent.prototype.toString = function() {
-    return this.x !== null ? "("+this.x.padZero(3)+","+this.y.padZero(3)+")" : "(xxx,yyy)";
+    let x = Math.abs(this.x);
+    let y = Math.abs(this.y);
+    if(this.x >= 0){
+        x = " "+x.padZero(3);
+    }else{
+        x = "-"+x.padZero(3);
+    }
+    if(this.y >= 0){
+        y = " "+y.padZero(3);
+    }else{
+        y = "-"+y.padZero(3);
+    }
+    return this.x !== null ? "("+x+","+y+")" : "( xxx, yyy)";
 };
 
 /**
