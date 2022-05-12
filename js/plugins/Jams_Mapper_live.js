@@ -18,7 +18,7 @@ Jams_Mapper.prototype.initialize = function() {
         object => console.log("load")
     );
     Jams.EventBus.subscribe(
-        "playerPos",
+        "mapSection",
         object => this.transferCheck(object)
     );
     Jams.EventBus.subscribe(
@@ -81,6 +81,7 @@ Jams_Mapper.prototype.onXhrError = function(name, src, url) {
 
 Jams_Mapper.prototype.onLoad = function(object, id) {
     object.id = id;
+    console.log("loading %s", id);
     this.loadMap(object);
     this._loaded++;
     if (this._loaded === this._loading) {
@@ -261,25 +262,45 @@ Jams_Mapper.prototype.createSector = function(map, world) {
 };
 
 Jams_Mapper.prototype.transferCheck = function(object) {
-
-    if (this.isMapsReady && $dataMap) {
-        if (object.x > $dataMap?.maxtX && this?.rightMap !== "Triggered") {
-           this.loading++;
-           this.rightMap = "Triggered";
-           this.xPos = this.xPos +1 >= 3 ? 0: this.xPos + 1;
-           if ($dataMap.rightMapID !== null) {
+    x = this.getRelativeMapPosition(object.x,this.xPos);
+    y = this.getRelativeMapPosition(object.y,this.yPos);
+    //if (this.isMapsReady && $dataMap) {
+        if ($dataMap?.rightMapID !== null && x === 1 && y === 0) {
+                this.loading++;
                 let id = parseInt($dataMap.rightMapID).toString();
+                console.log("pre loading %s",id);
                 let filename = "combined/" + "Map%1.json".format(id.padZero(3));
-                this.loadDataFile(id, filename, id);
-            }    
-
-        } else if (object.x < $dataMap?.mintX) {
-            //$gamePlayer?.reserveTransfer($dataMap.leftMapID, $dataMap.maxtX, object.y, 0, 2);
-        } else if (object.y > $dataMap?.maxtY) {
-            //$gamePlayer?.reserveTransfer($dataMap.downMapID, object.x, $dataMap.mintY, 0, 2);
-        } else if (object.y < $dataMap?.mintY) {
-            //$gamePlayer?.reserveTransfer($dataMap.upMapID, object.x, $dataMap.maxtY, 0, 2);
+                this.loadDataFile(id, filename, id);    
+        } 
+        else if ($dataMap?.leftMapID !== null && x === -1 && y === 0) {
+            this.loading++;
+            let id = parseInt($dataMap.leftMapID).toString();
+            let filename = "combined/" + "Map%1.json".format(id.padZero(3));
+            this.loadDataFile(id, filename, id);  
+        } else if ($dataMap?.upMapID !== null && x === 0 && y === 1) {
+            this.loading++;
+            let id = parseInt($dataMap.upMapID).toString();
+            let filename = "combined/" + "Map%1.json".format(id.padZero(3));
+            this.loadDataFile(id, filename, id);  
+        } else if ($dataMap?.downMapID !== null && x === 0 && y === -1) {
+            this.loading++;
+            let id = parseInt($dataMap.downMapID).toString();
+            let filename = "combined/" + "Map%1.json".format(id.padZero(3));
+            this.loadDataFile(id, filename, id);  
         }
+        this.xPos = object.x;
+        this.yPos = object.y;
+};
+
+Jams_Mapper.prototype.getRelativeMapPosition = function(pos,prevPos) {
+    if(Math.abs(pos-prevPos) === 2){
+        if (pos>prevPos){
+            return -1;
+        }else{
+            return 1;
+        }
+    }else{
+        return pos-prevPos;
     }
 };
 
@@ -289,18 +310,31 @@ Jams_Mapper.prototype.transferCheck = function(object) {
 */
 Jams_Mapper.prototype.mapOffset = function(map) {
     xPos = this.xPos;
+    yPos = this.yPos;
     for (let k = 0; k < map.width * map.height * 6; k++) { //loop through the data array.
                 let segment = map.width/3 //three maps wide.
                 let rows = (k - k%map.width)/map.width;
+                let rowsOffset = (k - k%map.width)/map.width;
                 let maps = ((k - k%segment)/segment) - rows*3;
-                let mapReset = maps+xPos>=3? maps+xPos-3: maps+xPos;
+                let mapReset = maps+xPos;
+                
+                if (maps+xPos>=3){
+                    mapReset = maps+xPos-3;
+                }else if (maps+xPos<0){
+                    mapReset = maps+xPos+3;
+                }
                 let kReset =k-maps*segment-rows*map.width;
                 let f = kReset+mapReset*segment+rows*map.width;
 
                 this.csv +=k+","+segment+","+rows+","+maps+","+mapReset+","+kReset+","+f+"\n"; 
                 $dataMap.data[f] = map.data[k];
         }
+    $dataMap.rightMapID = map.rightMapID;
+    $dataMap.upMapID = map.upMapID;
+    $dataMap.leftMapID = map.leftMapID;
+    $dataMap.downMapID = map.downMapID;
     //console.log(this.csv);
+    this.csv = "";
 };
 
 /**
