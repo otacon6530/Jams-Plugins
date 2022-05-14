@@ -15,7 +15,7 @@ Jams_Mapper.prototype.initialize = function() {
     );
     Jams.EventBus.subscribe(
         "$dataMap",
-        object => console.log("load")
+        object => this.mapAdj()
     );
     Jams.EventBus.subscribe(
         "mapSection",
@@ -29,7 +29,14 @@ Jams_Mapper.prototype.initialize = function() {
     this.loadComplete = this.build;
     this.csv = "";
     this.xPos = 0;
+    this.yPos = 0;
+    this.done = true;
     Jams.FPSManager.addMetric("Map Sect: ","mapSection",0);
+};
+//
+Jams_Mapper.prototype.mapAdj = function() {
+    let map = JSON.parse(JSON.stringify($dataMap));
+    this.mapOffset(map);
 };
 
 /**load all maps**/
@@ -81,7 +88,6 @@ Jams_Mapper.prototype.onXhrError = function(name, src, url) {
 
 Jams_Mapper.prototype.onLoad = function(object, id) {
     object.id = id;
-    console.log("loading %s", id);
     this.loadMap(object);
     this._loaded++;
     if (this._loaded === this._loading) {
@@ -122,7 +128,7 @@ Jams_Mapper.prototype.createWorldSets = function(object) {
         world.yMax = object._worldY;
     }
     if (!world.mapSets.hasOwnProperty(object._worldX)) {
-        world.mapSets[object._worldX] = new Array();
+        world.mapSets[object._worldX] = {};
     }
     world.mapSets[object._worldX][object._worldY] = object;
     this.worldSets[world.name] = world;
@@ -157,7 +163,6 @@ Jams_Mapper.prototype.build = function() {
 
     });
     this.isMapsReady = true;
-    console.log("Mapper: Maps have been merged.");
     
     this.loadMap = this.mapOffset;
     this.loadComplete = this.loadComplete;
@@ -167,12 +172,12 @@ Jams_Mapper.prototype.build = function() {
 
 
 Jams_Mapper.prototype.getMap = function(object) {
-    console.log(object);
+    
 };
 
 Jams_Mapper.prototype.loadComplete = function() {
    
-    console.log("Map loaded");
+    
 };
 
 Jams_Mapper.prototype.createSector = function(map, world) {
@@ -181,80 +186,63 @@ Jams_Mapper.prototype.createSector = function(map, world) {
     let yMin = parseInt(map._worldY) - 1;
     let xMax = parseInt(map._worldX) + 1;
     let yMax = parseInt(map._worldY) + 1;
-    let w = map.width;
-    let h = map.height;
     let centerMapX = map._worldX;
     let centerMapY = map._worldY;
-    let renDistance = 1;
-    let renWW = 2 * renDistance + 1;
-    let mapWidth = w * renWW;
-    let renWH = renWW;
-    let mapHeight = h * renWH;
-    let mapW = mapWidth / renWW;
-    let mapH = mapHeight / renWH;
-    let fill = new Array(w * 3 * h * 3 * 6).fill(0); //fill for blank sectors
-    let e = new Array();
-
+    mapClone.scrollType = 3;
+    mapClone._xMin;
+    mapClone._yMin;
+    mapClone._xMax;
+    mapClone._yMax;
+    mapClone.mapSets = {};
     for (let y = yMax; y >= yMin; y--) { //loop top to bottom sectors
         for (let x = xMin; x <= xMax; x++) { //loop left to right sectors
-            for (let k = 0; k < w * h * 6; k++) { //loop through the data array.
                 if (x in world.mapSets) { //verify the map exists on the x axis.
                     if (y in world.mapSets[x]) { //verify the map exists on the y axis.
-                        let neighborMap = world.mapSets[x][y];
-                        let sIndex = k;
-                        let xAxis = x;
-                        let yAxis = y;
-                        let Layers = (sIndex - (sIndex % (mapW * mapH))) / (mapW * mapH);
-                        let AdjsIndex = (sIndex - (Layers * mapH * mapW));
-                        let relXAxis = xAxis - centerMapX;
-                        let relYAxis = yAxis - centerMapY;
-                        let Round = (AdjsIndex - (AdjsIndex % (mapWidth / renWW))) / (mapWidth / renWW)
-                        let Rows = relXAxis + 1;
-                        let Columns = -relYAxis + 1;
-                        let finalIndex = AdjsIndex + ((renWW - 1) * (mapWidth / renWW) * Round) + (mapWidth / renWW) * Rows + (mapWidth * mapHeight / renWH) * Columns + (mapHeight * mapWidth) * Layers;
-                        fill[finalIndex] = neighborMap.data[k];
-                        if (relXAxis === -1 && relYAxis === 0) {
-                            mapClone.leftMapID = neighborMap.id;
-                        } else if (relXAxis === 1 && relYAxis === 0) {
-                            mapClone.rightMapID = neighborMap.id;
-                        } else if (relXAxis === 0 && relYAxis === 1) {
-                            mapClone.upMapID = neighborMap.id;
-                        } else if (relXAxis === 0 && relYAxis === -1) {
-                            mapClone.downMapID = neighborMap.id;
+
+                        if(mapClone._xMin == null || x<mapClone._xMin){
+                            mapClone._xMin = x;
+                        }
+                        if(mapClone._xMax == null || x>mapClone._xMax){
+                            mapClone._xMax = x;
+                        }
+                        if(mapClone._yMin == null || y<mapClone._yMin){
+                            mapClone._yMin = y;
+                        }
+                        if(mapClone._yMax == null || y>mapClone._yMin){
+                            mapClone._yMax = y;
                         }
 
-                    }
+                        let neighborMap = world.mapSets[x][y];
+                        let relXAxis = x - centerMapX;
+                        let relYAxis = y - centerMapY;
+                        if (!mapClone.mapSets.hasOwnProperty(x)) {
+                            mapClone.mapSets[x] = {};
+                        }
+                        mapClone.mapSets[x][y] = neighborMap;
+                        
+                        
+                        if (relXAxis === -1 && relYAxis === 0) {
+                            mapClone.leftMapID = neighborMap.id;
+                        }else if (relXAxis === -1 && relYAxis === 1) {
+                            mapClone.upperLeftMapID = neighborMap.id;
+                        }else if (relXAxis === -1 && relYAxis === -1) {
+                            mapClone.bottomLeftMapID = neighborMap.id;
+                        } else if (relXAxis === 1 && relYAxis === 0) {
+                            mapClone.rightMapID = neighborMap.id;
+                        } else if (relXAxis === 1 && relYAxis === 1) {
+                            mapClone.upperRightMapID = neighborMap.id;
+                        } else if (relXAxis === 1 && relYAxis === -1) {
+                            mapClone.bottomRightMapID = neighborMap.id;
+                        } else if (relXAxis === 0 && relYAxis === 1) {
+                            mapClone.upperMapID = neighborMap.id;
+                        } else if (relXAxis === 0 && relYAxis === -1) {
+                            mapClone.bottomMapID = neighborMap.id;
+                        }
                 }
             }
         }
     }
-    mapClone.data = fill;
-    mapClone._parallaxLoopX = true;
-    mapClone._parallaxLoopY = true;
 
-    //Primay Map event shifting
-    mapClone.events.forEach(e => {
-        if (e !== null) {
-            e.x += mapW;
-            e.y += mapH;
-        }
-    });
-
-    //Offset start location
-    if (map.id == $dataSystem.startMapId) {
-        $dataSystem.startX += mapW;
-        $dataSystem.startY += mapH;
-        $gamePlayer?.reserveTransfer(map.id, $dataSystem.startX, $dataSystem.startY, 0, 2);
-    }
-
-    //get the corners
-    mapClone.mintX = w;
-    mapClone.maxtX = w * 2 - 1;
-    mapClone.mintY = h;
-    mapClone.maxtY = h * 2 - 1;
-
-    mapClone.width = mapWidth;
-    mapClone.height = mapHeight;
     let fs = require("fs");
     let id = parseInt(map.id).toString();
     let filename = "Map%1".format(id.padZero(3));
@@ -264,32 +252,34 @@ Jams_Mapper.prototype.createSector = function(map, world) {
 Jams_Mapper.prototype.transferCheck = function(object) {
     x = this.getRelativeMapPosition(object.x,this.xPos);
     y = this.getRelativeMapPosition(object.y,this.yPos);
-    //if (this.isMapsReady && $dataMap) {
+    if (this.isMapsReady && $dataMap) {
         if ($dataMap?.rightMapID !== null && x === 1 && y === 0) {
                 this.loading++;
                 let id = parseInt($dataMap.rightMapID).toString();
-                console.log("pre loading %s",id);
                 let filename = "combined/" + "Map%1.json".format(id.padZero(3));
-                this.loadDataFile(id, filename, id);    
+                this.loadDataFile(id, filename, id);
         } 
         else if ($dataMap?.leftMapID !== null && x === -1 && y === 0) {
             this.loading++;
             let id = parseInt($dataMap.leftMapID).toString();
             let filename = "combined/" + "Map%1.json".format(id.padZero(3));
-            this.loadDataFile(id, filename, id);  
-        } else if ($dataMap?.upMapID !== null && x === 0 && y === 1) {
+            this.loadDataFile(id, filename, id);
+        } else 
+        if ($dataMap?.upperMapID !== null && x === 0 && y === 1) {
             this.loading++;
-            let id = parseInt($dataMap.upMapID).toString();
+            let id = parseInt($dataMap.upperMapID).toString();
             let filename = "combined/" + "Map%1.json".format(id.padZero(3));
-            this.loadDataFile(id, filename, id);  
-        } else if ($dataMap?.downMapID !== null && x === 0 && y === -1) {
+            this.loadDataFile(id, filename, id);
+        }
+        else if ($dataMap?.bottomMapID !== null && x === 0 && y === -1) {
             this.loading++;
-            let id = parseInt($dataMap.downMapID).toString();
+            let id = parseInt($dataMap.bottomMapID).toString();
             let filename = "combined/" + "Map%1.json".format(id.padZero(3));
-            this.loadDataFile(id, filename, id);  
+            this.loadDataFile(id, filename, id);
         }
         this.xPos = object.x;
         this.yPos = object.y;
+    }
 };
 
 Jams_Mapper.prototype.getRelativeMapPosition = function(pos,prevPos) {
@@ -308,34 +298,97 @@ Jams_Mapper.prototype.getRelativeMapPosition = function(pos,prevPos) {
 * @description Shuffle map sections depending on what position the map's center should be in.
 * @param map Map object
 */
-Jams_Mapper.prototype.mapOffset = function(map) {
-    xPos = this.xPos;
-    yPos = this.yPos;
-    for (let k = 0; k < map.width * map.height * 6; k++) { //loop through the data array.
-                let segment = map.width/3 //three maps wide.
-                let rows = (k - k%map.width)/map.width;
-                let rowsOffset = (k - k%map.width)/map.width;
-                let maps = ((k - k%segment)/segment) - rows*3;
-                let mapReset = maps+xPos;
-                
-                if (maps+xPos>=3){
-                    mapReset = maps+xPos-3;
-                }else if (maps+xPos<0){
-                    mapReset = maps+xPos+3;
-                }
-                let kReset =k-maps*segment-rows*map.width;
-                let f = kReset+mapReset*segment+rows*map.width;
+Jams_Mapper.prototype.mapOffset = function(inputMap) {
+    let map = JSON.parse(JSON.stringify(inputMap)); //I need the original data in place for the other maps.
+    let xMin = parseInt(map._xMin);
+    let yMin = parseInt(map._yMin);
+    let xMax = parseInt(map._xMax);
+    let yMax = parseInt(map._yMax);
+    let w = map.width;
+    let h = map.height;
+    let centerMapX = parseInt(map._worldX);
+    let centerMapY = parseInt(map._worldY);
+    let renDistance = 1;
+    let renWW = 2 * renDistance + 1;
+    let mapWidth = w * renWW;
+    let renWH = renWW;
+    let mapHeight = h * renWH;
+    let mapW = mapWidth / renWW;
+    let mapH = mapHeight / renWH;
 
-                this.csv +=k+","+segment+","+rows+","+maps+","+mapReset+","+kReset+","+f+"\n"; 
-                $dataMap.data[f] = map.data[k];
+    Object.keys(map).forEach(function(key) {
+        if($dataMap[key] !== map[key] && key !=="data"){
+            $dataMap[key] = map[key];
         }
-    $dataMap.rightMapID = map.rightMapID;
-    $dataMap.upMapID = map.upMapID;
-    $dataMap.leftMapID = map.leftMapID;
-    $dataMap.downMapID = map.downMapID;
-    //console.log(this.csv);
+    });
+
+    //$dataMap.data = new Array(w * 3 * h * 3 * 6).fill(0); //fill for blank sectors
+    for (let k = 0; k < w * 3 * h * 3 * 6; k++) { //loop through the data array.    
+       $dataMap.data[k] = 0;
+    }
+
+
+    for (let y = yMax; y >= yMin; y--) { //loop top to bottom sectors
+        for (let x = xMin; x <= xMax; x++) { //loop left to right sectors
+            
+            if (x in map.mapSets) { //verify the map exists on the x axis.
+            if (y in map.mapSets[x]) { //verify the map exists on the y axis.
+                let neighborMap = map.mapSets[x][y];
+            for (let k = 0; k < w * h * 6; k++) { //loop through the data array.
+                    
+                        let sIndex = k;
+                        let xAxis = x;
+                        let yAxis = y;
+                        let Layers = (sIndex - (sIndex % (mapW * mapH))) / (mapW * mapH);
+                        let AdjsIndex = (sIndex - (Layers * mapH * mapW));
+                        let relXAxis = xAxis - centerMapX + this.xPos;
+                        if(relXAxis>=2){
+                            relXAxis -=3;
+                        }
+                        if(relXAxis<=-2){
+                            relXAxis +=3;
+                        }
+
+                        let relYAxis = yAxis - centerMapY  + this.yPos;
+                        if(relYAxis>=2){
+                            relYAxis -=3;
+                        }
+                        if(relYAxis<=-2){
+                            relYAxis +=3;
+                        }
+
+                        let Round = (AdjsIndex - (AdjsIndex % (mapWidth / renWW))) / (mapWidth / renWW)
+                        let Rows = relXAxis + 1;
+                        let Columns = -relYAxis + 1;
+                        let finalIndex = AdjsIndex + ((renWW - 1) * (mapWidth / renWW) * Round) + (mapWidth / renWW) * Rows + (mapWidth * mapHeight / renWH) * Columns + (mapHeight * mapWidth) * Layers;
+                        $dataMap.data[finalIndex] = neighborMap.data[k];
+                        this.csv += centerMapX+","+centerMapY+","+sIndex+","+xAxis+","+yAxis+","+Layers+","+AdjsIndex+","+relXAxis+","+relYAxis+","+Round+","+Rows+","+Columns+","+finalIndex+"\n";
+                    }
+                }
+            }
+        }
+    }
     this.csv = "";
-};
+    $dataMap.width = $dataMap.width*3;
+    $dataMap.height = $dataMap.height*3;
+
+    //Primay Map event shifting
+    $dataMap.events.forEach(e => {
+        if (e !== null) {
+            e.x += mapW;
+            e.y += mapH;
+        }
+    });
+
+     //Offset start location
+     if (map.id == $dataSystem.startMapId && this.done ) {
+        $dataSystem.startX += mapW;
+        $dataSystem.startY += mapH;
+        $gamePlayer?.reserveTransfer(map.id, $dataSystem.startX, $dataSystem.startY, 0, 2);
+        this.done = false;
+    }
+
+}
 
 /**
 * @description Calculate the map section the player is currently standing in.
