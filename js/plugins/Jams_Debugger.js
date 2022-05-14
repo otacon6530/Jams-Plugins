@@ -60,7 +60,19 @@ Jams_PlayerPosEvent.prototype.initialize = function(name) {
  * @param {string} name the name of the event.
  */
 Jams_PlayerPosEvent.prototype.toString = function() {
-    return this.x !== null ? "("+this.x.padZero(3)+","+this.y.padZero(3)+")" : "(xxx,yyy)";
+    let x = Math.abs(this.x);
+    let y = Math.abs(this.y);
+    if(this.x >= 0){
+        x = " "+x.padZero(3);
+    }else{
+        x = "-"+x.padZero(3);
+    }
+    if(this.y >= 0){
+        y = " "+y.padZero(3);
+    }else{
+        y = "-"+y.padZero(3);
+    }
+    return this.x !== null ? "("+x+","+y+")" : "( xxx, yyy)";
 };
 
 /**
@@ -291,13 +303,17 @@ console.log = function() {
     realConsoleLog.apply(console, arguments);
 };
 
-//$dataMapInfos has been loaded
+//$dataMapInfos has been loaded and one for $DataMap
 DataManager._Jams_onXhrLoad = DataManager.onXhrLoad;
 DataManager.onXhrLoad = function(xhr, name, src, url) {
     this._Jams_onXhrLoad(xhr, name, src, url);
     if (name === "$dataMapInfos") {
         if(this._$dataMapInfosEvent === undefined){this._$dataMapInfosEvent = new Jams_Event(name)};
         this._$dataMapInfosEvent.update({"debugMsg": name});
+    }
+    if (name === "$dataMap") {
+        if(this._$dataMapEvent === undefined){this._$dataMapEvent = new Jams_Event(name)};
+        this._$dataMapEvent.update({"debugMsg": name});
     }
 };
 

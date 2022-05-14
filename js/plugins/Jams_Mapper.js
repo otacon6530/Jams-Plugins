@@ -143,6 +143,7 @@ Jams_Mapper.prototype.build = function() {
     });
     this.isMapsReady = true;
     console.log("Mapper: Maps have been merged.");
+    Graphics._switchFPSCounter();
 };
 
 Jams_Mapper.prototype.createSector = function(map, world) {
@@ -232,15 +233,15 @@ Jams_Mapper.prototype.createSector = function(map, world) {
 
 Jams_Mapper.prototype.transferCheck = function(object) {
     if (this.isMapsReady && $dataMap) {
-        console.log($dataMap);
         if (object.x > $dataMap?.maxtX) {
-            $gamePlayer?.reserveTransfer($dataMap.rightMapID, $dataMap.mintX, object.y, 0, 2);
+            //$gamePlayer?._Jams_reserveTransfer($dataMap.rightMapID, $dataMap.mintX, object.y, 0, 2);
+            $dataMap.data[3] =3;
         } else if (object.x < $dataMap?.mintX) {
-            $gamePlayer?.reserveTransfer($dataMap.leftMapID, $dataMap.maxtX, object.y, 0, 2);
+            //$gamePlayer?._Jams_reserveTransfer($dataMap.leftMapID, $dataMap.maxtX, object.y, 0, 2);
         } else if (object.y > $dataMap?.maxtY) {
-            $gamePlayer?.reserveTransfer($dataMap.downMapID, object.x, $dataMap.mintY, 0, 2);
+            //$gamePlayer?._Jams_reserveTransfer($dataMap.downMapID, object.x, $dataMap.mintY, 0, 2);
         } else if (object.y < $dataMap?.mintY) {
-            $gamePlayer?.reserveTransfer($dataMap.upMapID, object.x, $dataMap.maxtY, 0, 2);
+            //$gamePlayer?._Jams_reserveTransfer($dataMap.upMapID, object.x, $dataMap.maxtY, 0, 2);
         }
     }
 };
@@ -269,6 +270,76 @@ DataManager._Jams_waitForComplete = function(mapId) {
         }.bind(this), 250);
     }
 };
+
+//need to alter the transfer process
+//Game_Player.prototype._Jams_performTransfer = function() {
+//    if (this._Jams_isTransferring()) {
+//        console.log("transfering");
+//        this.setDirection(this._newDirection);
+//        if (this._newMapId !== $gameMap.mapId() || this._needsMapReload) {
+//            $gameMap.setup(this._newMapId);
+//            this._needsMapReload = false;
+//        }
+//        this.locate(this._newX, this._newY);
+//        this.refresh();
+//        this._Jams_clearTransferInfo();
+//    }
+//};
+//
+//Game_Player.prototype._Jams_isTransferring = function() {
+//    return this._Jams_transferring;
+//};
+//
+//Game_Player.prototype._Jams_clearTransferInfo = function() {
+//    this._Jams_transferring = false;
+//    this._newMapId = 0;
+//    this._newX = 0;
+//    this._newY = 0;
+//    this._newDirection = 0;
+//};
+//
+//Game_Player.prototype._Jams_reserveTransfer = function(mapId, x, y, d, fadeType) {
+//    this._Jams_transferring = true;
+//    this._newMapId = mapId;
+//    this._newX = x;
+//    this._newY = y;
+//    this._newDirection = d;
+//    this._fadeType = fadeType;
+//    console.log(this._Jams_isTransferring());
+//};
+//
+//Game_Player.prototype._Jams_locate = function(x, y) {
+//    console.log("_Jams_locate");
+//    Game_Character.prototype.locate.call(this, x, y);
+//    this.center(x, y);
+//    this.makeEncounterCount();
+//    if (this.isInVehicle()) {
+//        this.vehicle().refresh();
+//    }
+//    this._followers.synchronize(x, y, this.direction());
+//};
+//Scene_Map.prototype._Jams_onMapLoaded = Scene_Map.prototype.onMapLoaded;
+//Scene_Map.prototype.onMapLoaded = function() {
+//    if (this._Jams_transfer) {
+//        $gamePlayer._Jams_performTransfer();
+//    }
+//    this._Jams_onMapLoaded();
+//   
+//};
+
+//Scene_Map.prototype._Jams_create = Scene_Map.prototype.create;
+//Scene_Map.prototype.create = function() {
+//    this._Jams_create();
+//    this._Jams_transfer = $gamePlayer._Jams_isTransferring();
+//    if (this._Jams_transfer) {
+//        DataManager.loadMapData($gamePlayer.newMapId());
+//        this.onTransfer();
+//    } else if (!$dataMap || $dataMap.id !== $gameMap.mapId()) {
+//        DataManager.loadMapData($gameMap.mapId());
+//    }
+//
+//
+//};
 
 //=============================================================================
 // Mapper.js
