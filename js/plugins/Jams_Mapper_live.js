@@ -337,19 +337,11 @@ Jams_Mapper.prototype.getRelativeMapPosition = function(pos, prevPos) {
  * @param map Map object
  */
 Jams_Mapper.prototype.updateMap = function(map) {
-
     const jm = map.JAMS_Map;
-
     this.clearEvents();
     $gameMap._mapId = map.id;
     this.clearMapData(jm.w,jm.h);
-    //Copy map key values to $dataMap
-    Object.keys(map).forEach(function(key) {
-        if ($dataMap[key] !== map[key] && key !== "data") {
-            $dataMap[key] = map[key];
-        }
-    });
-
+    this.pushMapMeta(map);
     for (let y = jm.yMax; y >= jm.yMin; y--) { //loop top to bottom sectors
         for (let x = jm.xMin; x <= jm.xMax; x++) { //loop left to right sectors
             if (x in map.mapSets) { //verify the map exists on the x axis.
@@ -398,6 +390,14 @@ Jams_Mapper.prototype.clearEvents = function() {
         }
     });
     $gameMap._events = [];
+}
+
+Jams_Mapper.prototype.pushMapMeta = function(map) {
+    Object.keys(map).forEach(function(key) {
+        if ($dataMap[key] !== map[key] && key !== "data") {
+            $dataMap[key] = map[key];
+        }
+    });
 }
 
 Jams_Mapper.prototype.clearMapData = function(w , h) {
