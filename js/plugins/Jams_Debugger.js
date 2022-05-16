@@ -17,7 +17,7 @@ Jams_Event.prototype.initialize = function(name) {
  */
 Jams_Event.prototype.update = function(obj) {
 
-    //only pusblish if different
+    //only publish if different
     let isDiff = false;
     Object.keys(obj).forEach(function(key) {
         if(this[key] !== obj[key]){
@@ -313,7 +313,7 @@ DataManager.onXhrLoad = function(xhr, name, src, url) {
     }
     if (name === "$dataMap") {
         if(this._$dataMapEvent === undefined){this._$dataMapEvent = new Jams_Event(name)};
-        this._$dataMapEvent.update({"debugMsg": name});
+        this._$dataMapEvent.update({"debugMsg": new Date()});
     }
 };
 
