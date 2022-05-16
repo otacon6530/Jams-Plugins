@@ -339,7 +339,9 @@ Jams_Mapper.prototype.getRelativeMapPosition = function(pos, prevPos) {
 Jams_Mapper.prototype.updateMap = function(map) {
 
     const jm = map.JAMS_Map;
+
     this.clearEvents();
+    $gameMap._mapId = map.id;
     this.clearMapData(jm.w,jm.h);
     //Copy map key values to $dataMap
     Object.keys(map).forEach(function(key) {
