@@ -17,6 +17,8 @@ Jams_Mapper.prototype.initialize = function() {
     this.xPos = 0;
     this.yPos = 0;
     this.generateID = this.eventIDGenerator();
+    this.dataMapLoaded = false;
+    this.characterSpriteLoaded = false;
 };
 
 //Create event triggers
@@ -27,7 +29,7 @@ Jams_Mapper.prototype.createSubscriptions = function() {
     );
     Jams.EventBus.subscribe(
         "$dataMap",
-        object => this.updateMap($dataMap)
+        object => this.startMap(object)
     );
     Jams.EventBus.subscribe(
         "mapSection",
@@ -37,6 +39,22 @@ Jams_Mapper.prototype.createSubscriptions = function() {
         "playerPos",
         object => this.checkMapSection(object)
     );
+    Jams.EventBus.subscribe(
+        "Character Sprites Loaded",
+        object => this.startMap(object)
+    );
+};
+
+Jams_Mapper.prototype.startMap = function(object) {
+    
+    if(object.name === "Character Sprites Loaded"){
+        this.characterSpriteLoaded = true;
+        this._characterSprites = object._characterSprites;
+        this._tilemap = object._tilemap;
+    } else if(object.name === "$dataMap"){
+        this.dataMapLoaded = true;
+        this.updateMap($dataMap);
+    }
 };
 
 //Add debugger metrics;
@@ -392,15 +410,17 @@ Jams_Mapper.prototype.clearMapData = function(w , h) {
  */
 Jams_Mapper.prototype.eventOffset = function(map, xOffset, yOffset) {
     map.events.forEach(e => {
-        if (e !== null && SceneManager._scene._spriteset) {
+        if (e !== null) {
             e.id = this.generateID.next().value;
             e.x += xOffset;
             e.y += yOffset;
             $dataMap.events[e.id] = e;
             $gameMap._events[e.id] = new Game_Event($dataMap.id,e.id);
-            var sprite = new Sprite_Character($gameMap._events[e.id]);
-            SceneManager._scene._spriteset._characterSprites.push(sprite);
-            SceneManager._scene._spriteset._tilemap.addChild(sprite);
+            if(this._characterSprites){
+                var sprite = new Sprite_Character($gameMap._events[e.id]);
+                this._characterSprites.push(sprite);
+                this._tilemap.addChild(sprite);
+            }
         }
     });
 };

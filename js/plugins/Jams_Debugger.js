@@ -317,6 +317,31 @@ DataManager.onXhrLoad = function(xhr, name, src, url) {
     }
 };
 
+//Verify when character sprites are loaded.
+var _createCharacters = Spriteset_Map.prototype.createCharacters;
+Spriteset_Map.prototype.createCharacters = function() {
+    //_createCharacters.call(this);
+
+    this._characterSprites = [];
+    for (const event of $gameMap.events()) {
+        this._characterSprites.push(new Sprite_Character(event));
+    }
+    for (const vehicle of $gameMap.vehicles()) {
+        this._characterSprites.push(new Sprite_Character(vehicle));
+    }
+    for (const follower of $gamePlayer.followers().reverseData()) {
+        this._characterSprites.push(new Sprite_Character(follower));
+    }
+    this._characterSprites.push(new Sprite_Character($gamePlayer));
+    for (const sprite of this._characterSprites) {
+        this._tilemap.addChild(sprite);
+    }
+    if(this._jams_Event === undefined){this._jams_Event = new Jams_Event("Character Sprites Loaded")};
+        this._jams_Event._characterSprites = this._characterSprites;
+        this._jams_Event._tilemap = this._tilemap;
+        this._jams_Event.update({"debugMsg": new Date()});
+};
+
 //=============================================================================
 // Strings - throw strings at the bottom of the code, so I don't have to look at them.
 //=============================================================================
