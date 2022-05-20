@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{7462f56f-fcd7-457c-8ece-2310bd5b80ee}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <ProjectView>ShowAllFiles</ProjectView>
+    <StartupFile />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{349c5851-65df-11da-9384-00065b846f21};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">17.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <ItemGroup>
+    <Content Include="game.rmmzproject" />
+    <Content Include="index.html" />
+    <Content Include="js\main.js" />
+    <Content Include="js\plugins.js" />
+    <Content Include="js\rmmz_core.js" />
+    <Content Include="js\rmmz_managers.js" />
+    <Content Include="js\rmmz_objects.js" />
+    <Content Include="js\rmmz_scenes.js" />
+    <Content Include="js\rmmz_sprites.js" />
+    <Content Include="js\rmmz_windows.js" />
+    <Content Include="js\libs\effekseer.min.js" />
+    <Content Include="js\libs\localforage.min.js" />
+    <Content Include="js\libs\pako.min.js" />
+    <Content Include="js\libs\pixi.js" />
+    <Content Include="js\libs\vorbisdecoder.js" />
+    <Content Include="js\plugins\.js" />
+    <Content Include="js\plugins\AltMenuScreen.js" />
+    <Content Include="js\plugins\AltSaveScreen.js" />
+    <Content Include="js\plugins\ButtonPicture.js" />
+    <Content Include="js\plugins\eventWrapper.js" />
+    <Content Include="js\plugins\Jams_Debugger.js" />
+    <Content Include="js\plugins\Jams_Mapper.js" />
+    <Content Include="js\plugins\Jams_Mapper_live.js" />
+    <Content Include="js\plugins\TextPicture.js" />
+    <Content Include="package.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="audio" />
+    <Folder Include="audio\bgm" />
+    <Folder Include="audio\bgs" />
+    <Folder Include="audio\me" />
+    <Folder Include="audio\se" />
+    <Folder Include="css" />
+    <Folder Include="data" />
+    <Folder Include="data\combined" />
+    <Folder Include="effects" />
+    <Folder Include="effects\Model" />
+    <Folder Include="effects\Texture" />
+    <Folder Include="fonts" />
+    <Folder Include="icon" />
+    <Folder Include="img" />
+    <Folder Include="img\battlebacks1" />
+    <Folder Include="img\battlebacks2" />
+    <Folder Include="img\characters" />
+    <Folder Include="img\enemies" />
+    <Folder Include="img\faces" />
+    <Folder Include="img\layers" />
+    <Folder Include="img\parallaxes" />
+    <Folder Include="img\pictures" />
+    <Folder Include="img\sv_actors" />
+    <Folder Include="img\sv_enemies" />
+    <Folder Include="img\system" />
+    <Folder Include="img\tilesets" />
+    <Folder Include="img\titles1" />
+    <Folder Include="img\titles2" />
+    <Folder Include="js" />
+    <Folder Include="js\libs" />
+    <Folder Include="js\plugins" />
+    <Folder Include="movies" />
+    <Folder Include="save" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>False</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>0</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:48022/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>True</UseCustomServer>
+          <CustomServerUrl>http://localhost:1337</CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}" User="">
+        <WebProjectProperties>
+          <StartPageUrl>
+          </StartPageUrl>
+          <StartAction>CurrentPage</StartAction>
+          <AspNetDebugging>True</AspNetDebugging>
+          <SilverlightDebugging>False</SilverlightDebugging>
+          <NativeDebugging>False</NativeDebugging>
+          <SQLDebugging>False</SQLDebugging>
+          <ExternalProgram>
+          </ExternalProgram>
+          <StartExternalURL>
+          </StartExternalURL>
+          <StartCmdLineArguments>
+          </StartCmdLineArguments>
+          <StartWorkingDirectory>
+          </StartWorkingDirectory>
+          <EnableENC>False</EnableENC>
+          <AlwaysStartWebServerOnDebug>False</AlwaysStartWebServerOnDebug>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

@@ -16,6 +16,8 @@ Jams_Mapper.prototype.initialize = function() {
 
     this.xPos = 0;
     this.yPos = 0;
+    this.xChange = 0;
+    this.yChange = 0;
     this.generateID = this.eventIDGenerator();
     this.dataMapLoaded = false;
     this.characterSpriteLoaded = false;
@@ -186,6 +188,7 @@ Jams_Mapper.prototype.build = function() {
 
     });
     this.isMapsReady = true;
+    this.maps = new Array();
 
     this.loadMap = this.updateMap;
     this.loadComplete = this.loadComplete;
@@ -277,6 +280,12 @@ Jams_Mapper.prototype.createSector = function(map, world) {
 
     mapClone.JAMS_Map = JAMS_Map;
 
+    mapClone.events.forEach(e => {
+        if(e !== null){
+            e.id = map.id*1000000+e.id;
+        }
+    });
+        
     //Offset start location
     if (map.id == $dataSystem.startMapId) {
         $dataSystem.startX += JAMS_Map.mapW;
@@ -315,6 +324,8 @@ Jams_Mapper.prototype.transferCheck = function(object) {
             let filename = "combined/" + "Map%1.json".format(id.padZero(3));
             this.loadDataFile(id, filename, id);
         }
+        this.xChange = x;
+        this.yChange = y;
         this.xPos = object.x;
         this.yPos = object.y;
     }
@@ -337,8 +348,12 @@ Jams_Mapper.prototype.getRelativeMapPosition = function(pos, prevPos) {
  * @param map Map object
  */
 Jams_Mapper.prototype.updateMap = function(map) {
+
+
+    
+
     const jm = map.JAMS_Map;
-    this.clearEvents();
+    this.clearEvents(jm.centerMapX + this.xPos,jm.centerMapY + this.yPos);
     $gameMap._mapId = map.id;
     this.clearMapData(jm.w,jm.h);
     this.pushMapMeta(map);
@@ -363,17 +378,22 @@ Jams_Mapper.prototype.updateMap = function(map) {
                     if (relYAxis <= -2) {
                         relYAxis += 3;
                     }
-                    let Rows = relXAxis + 1;
-                    let Columns = -relYAxis + 1;
-                    for (let sIndex = 0; sIndex < jm.w * jm.h * 6; sIndex++) { //loop through the data array.
-                        let Layers = (sIndex - (sIndex % jm.volume)) / jm.volume;
-                        let AdjsIndex = (sIndex - (Layers * jm.volume));
-                        let Round = (AdjsIndex - (AdjsIndex % jm.w)) / jm.w
-                        let finalIndex = AdjsIndex + ((jm.renWW - 1) * jm.w * Round) + jm.w * Rows + (jm.finalVolume / jm.renWH) * Columns + jm.finalVolume * Layers;
-                        $dataMap.data[finalIndex] = neighborMap.data[sIndex];
-                    }
-                    
-                    this.eventOffset(neighborMap,(relXAxis+1)*jm.mapW,(-relYAxis+1)*jm.mapH);
+
+                        let Rows = relXAxis + 1;
+                        let Columns = -relYAxis + 1;
+                        for (let sIndex = 0; sIndex < jm.w * jm.h * 6; sIndex++) { //loop through the data array.
+                            let Layers = (sIndex - (sIndex % jm.volume)) / jm.volume;
+                            let AdjsIndex = (sIndex - (Layers * jm.volume));
+                            let Round = (AdjsIndex - (AdjsIndex % jm.w)) / jm.w
+                            let finalIndex = AdjsIndex + ((jm.renWW - 1) * jm.w * Round) + jm.w * Rows + (jm.finalVolume / jm.renWH) * Columns + jm.finalVolume * Layers;
+                            $dataMap.data[finalIndex] = neighborMap.data[sIndex];
+                        }
+
+                       // console.log("mapId: %s (%s,%s) and (%s,%s) compared to (%s,%s)",neighborMap.id,x,y,-1*this.xChange,this.yChange,relXAxis,relYAxis);
+
+                        if((relXAxis === -this.xChange && this.xChange !== 0) || (relYAxis === this.yChange && this.yChange !== 0) || (this.yChange === 0 && this.xChange ===0)){
+                            this.eventOffset(neighborMap,(relXAxis+1)*jm.mapW,(-relYAxis+1)*jm.mapH);
+                        }
                 }
             }
         }
@@ -382,19 +402,40 @@ Jams_Mapper.prototype.updateMap = function(map) {
     $dataMap.height = $dataMap.height * 3;
 }
 
-Jams_Mapper.prototype.clearEvents = function() {
-    $dataMap.events = [];
+Jams_Mapper.prototype.clearEvents = function(x, y) {
     $gameMap._events.forEach(e => {
+        
+        prevxPos = this.xPos - this.xChange;
+        prevyPos = this.yPos - this.yChange;
+        const pos = this.getMapSection(e.x,e.y);
+        let relXAxis = (prevxPos - this.xChange);
+        if (relXAxis >= 2) {
+            relXAxis -= 3;
+        }
+        if (relXAxis <= -2) {
+            relXAxis += 3;
+        }
+        let relYAxis = (prevyPos - this.yChange);
+        if (relYAxis >= 2) {
+            relYAxis -= 3;
+        }
+        if (relYAxis <= -2) {
+            relYAxis += 3;
+        }
+        
         if (e !== null) {
-            e.erase();
+            if((relXAxis === pos.x && this.xChange !== 0) || (relYAxis === pos.y && this.yChange !== 0) || (this.yChange === 0 && this.xChange ===0)){
+                e.erase();  
+                $dataMap.events[e.id] = null;
+                $gameMap.events[e.id] = null;
+            }
         }
     });
-    $gameMap._events = [];
 }
 
 Jams_Mapper.prototype.pushMapMeta = function(map) {
     Object.keys(map).forEach(function(key) {
-        if ($dataMap[key] !== map[key] && key !== "data") {
+        if ($dataMap[key] !== map[key] && key !== "data" && key !== "data") {
             $dataMap[key] = map[key];
         }
     });
@@ -413,15 +454,33 @@ Jams_Mapper.prototype.clearMapData = function(w , h) {
 Jams_Mapper.prototype.eventOffset = function(map, xOffset, yOffset) {
     map.events.forEach(e => {
         if (e !== null) {
-            e.id = this.generateID.next().value;
+        prevxPos = this.xPos - this.xChange;
+        prevyPos = this.yPos - this.yChange;
+        const pos = this.getMapSection(e.x,e.y);
+        let relXAxis = (prevxPos - this.xChange);
+        if (relXAxis >= 2) {
+            relXAxis -= 3;
+        }
+        if (relXAxis <= -2) {
+            relXAxis += 3;
+        }
+        let relYAxis = (prevyPos - this.yChange);
+        if (relYAxis >= 2) {
+            relYAxis -= 3;
+        }
+        if (relYAxis <= -2) {
+            relYAxis += 3;
+        }
+        if((relXAxis === pos.x && this.xChange !== 0) || (relYAxis === pos.y && this.yChange !== 0) || (this.yChange === 0 && this.xChange ===0)){
             e.x += xOffset;
-            e.y += yOffset;
-            $dataMap.events[e.id] = e;
-            $gameMap._events[e.id] = new Game_Event($dataMap.id,e.id);
-            if(this._characterSprites){
-                var sprite = new Sprite_Character($gameMap._events[e.id]);
-                this._characterSprites.push(sprite);
-                this._tilemap.addChild(sprite);
+                e.y += yOffset;
+                $dataMap.events[e.id] = e;
+                $gameMap._events[e.id] = new Game_Event($dataMap.id,e.id);
+                if(this._characterSprites){
+                    var sprite = new Sprite_Character($gameMap._events[e.id]);
+                    this._characterSprites.push(sprite);
+                    this._tilemap.addChild(sprite);
+                }
             }
         }
     });
@@ -444,13 +503,19 @@ Jams_Mapper.prototype.checkMapSection = function(object) {
         const mapSectionHeight = $dataMap.height / 3;
         const x = $gamePlayer?.x;
         const y = $gamePlayer?.y;
+        this._mapSectionEvent.update(this.getMapSection($gamePlayer?.x,$gamePlayer?.y));
+    }
+};
+
+
+Jams_Mapper.prototype.getMapSection = function(x,y) {
+    if ($dataMap) {
+        const mapSectionWidth = $dataMap.width / 3;
+        const mapSectionHeight = $dataMap.height / 3;
         const xSection = (x - x % mapSectionWidth) / mapSectionWidth - 1;
         const ySection = -(y - y % mapSectionHeight) / mapSectionHeight + 1;
-        this._mapSectionEvent.update({
-            "x": xSection,
-            "y": ySection
-        });
-    }
+        return {"x": xSection,"y": ySection};
+        };
 };
 
 /**

@@ -8,5 +8,13 @@
         "height": 624,
         "position": "center",
         "icon": "icon/icon.png"
+    },
+  "dependencies": {
+    "nw": "^0.64.1"
+  },
+  {
+    "scripts": {
+      "start": "nw"
     }
+  }
 }
